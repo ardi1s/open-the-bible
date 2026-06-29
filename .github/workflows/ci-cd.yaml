@@ -14,11 +14,13 @@ on:
     branches: [main]
 
 env:
-  # ──── 镜像仓库配置（按需修改）────
-  # Docker Hub          → docker.io
-  # 阿里云容器镜像服务   → registry.cn-hangzhou.aliyuncs.com
-  # GitHub Container    → ghcr.io
-  REGISTRY: docker.io
+  # ──── 腾讯云容器镜像服务 TCR ────
+  # 个人版使用以下地址，企业版替换为实例域名
+  REGISTRY: ccr.ccs.tencentyun.com
+
+  # 命名空间 —— 在 TCR 控制台创建，用于组织镜像
+  # 最终镜像路径 = ccr.ccs.tencentyun.com/<命名空间>/xys-<服务名>:<tag>
+  TCR_NAMESPACE: xys-clone
 
   # ──── 服务清单（新增服务在此追加）────
   # 约定：每个服务必须有 cmd/<name>/Dockerfile
@@ -73,8 +75,7 @@ jobs:
         id: meta
         run: |
           SHA7="$(echo "${{ github.sha }}" | cut -c1-7)"
-          REPO="${{ secrets.DOCKER_USERNAME }}"
-          IMG="${{ env.REGISTRY }}/${REPO}/xys-${{ matrix.service }}"
+          IMG="${{ env.REGISTRY }}/${{ env.TCR_NAMESPACE }}/xys-${{ matrix.service }}"
           echo "img=${IMG}"                 >> $GITHUB_OUTPUT
           echo "tag_sha=${IMG}:${SHA7}"     >> $GITHUB_OUTPUT
           echo "tag_latest=${IMG}:latest"   >> $GITHUB_OUTPUT
@@ -127,8 +128,7 @@ jobs:
         id: meta
         run: |
           SHA7="$(echo "${{ github.sha }}" | cut -c1-7)"
-          REPO="${{ secrets.DOCKER_USERNAME }}"
-          IMG="${{ env.REGISTRY }}/${REPO}/xys-${{ matrix.service }}"
+          IMG="${{ env.REGISTRY }}/${{ env.TCR_NAMESPACE }}/xys-${{ matrix.service }}"
           echo "tag=${IMG}:${SHA7}" >> $GITHUB_OUTPUT
 
       # ── 条件部署：有 kubeconfig 则滚动更新，无则跳过 ──

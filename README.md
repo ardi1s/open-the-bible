@@ -125,14 +125,79 @@ SERVICES := user gateway note   # ← 追加新服务名
 
 ### 配置 GitHub Secrets
 
-在仓库 `Settings → Secrets and variables → Actions → New repository secret` 中添加：
+使用腾讯云容器镜像服务 TCR（个人版免费，每月 500 个镜像免费存储）。下文包含从零创建命名空间到配置 Secret 的完整流程。
 
-#### 必填
+#### 前提：开通 TCR 个人版
 
-| Secret | 值示例 | 说明 |
+1. 打开 [腾讯云容器镜像服务控制台](https://console.cloud.tencent.com/tcr)
+2. 首次使用会提示开通，选择**个人版**（免费额度），确认开通
+3. 开通后进入实例列表，点击 **ccr.ccs.tencentyun.com**（个人版默认实例）
+
+#### 第一步：创建命名空间
+
+命名空间是镜像的组织目录，最终镜像路径为：
+```
+ccr.ccs.tencentyun.com/<命名空间>/xys-user:latest
+```
+
+操作步骤：
+1. 在 TCR 控制台左侧点击 **命名空间**
+2. 点击 **新建**，填写：
+   - 命名空间名称：`xys-clone`
+   - 访问级别：选择 **公开**（拉取不需要登录，推送仍需凭证）
+3. 点击提交
+
+> 名称也可以改成你喜欢的，比如 `open-the-bible`，但需要同步修改 `ci-cd.yaml` 第 18 行和 `Makefile` 第 20 行的 `TCR_NAMESPACE`。
+
+#### 第二步：获取账号 ID（即 docker login 用户名）
+
+1. 在腾讯云控制台右上角，点击你的头像
+2. 点击 **账号信息**
+3. 找到 **账号 ID**（一串数字，如 `100012345678`），复制下来
+
+#### 第三步：创建长期访问凭证（即 docker login 密码）
+
+1. 回到 TCR 控制台，左侧点击 **访问凭证**
+2. 点击 **新建**，会生成一个用户名和密码（token）
+   - 用户名默认与你的账号 ID 一致
+   - 密码是一长串字符，**立即复制保存**，关闭后不可查看
+3. 如果已经有凭证，也可以直接点击 **查看密码** 来获取
+
+#### 第四步：填入 GitHub Secrets
+
+打开仓库 → **Settings → Secrets and variables → Actions → New repository secret**，添加：
+
+| Secret | 填什么 | 来源 |
 |--------|--------|------|
-| `DOCKER_USERNAME` | `yourname` | Docker Hub / ACR 用户名 |
-| `DOCKER_PASSWORD` | `dckr_pat_xxx...` | Docker Hub Access Token（**不要用密码**，在 Hub → Account Settings → Security → New Access Token 创建） |
+| `DOCKER_USERNAME` | 你的账号 ID（如 `100012345678`） | 第二步获取 |
+| `DOCKER_PASSWORD` | 长期访问凭证的密码 | 第三步获取 |
+
+#### 对应关系一张图
+
+```
+┌──────────────────────────────────────────────────────────┐
+│                        GitHub Secrets                     │
+│  DOCKER_USERNAME = 100012345678 ──▶ docker login 用户名  │
+│  DOCKER_PASSWORD = xxxxxxxx     ──▶ docker login 密码    │
+└──────────────────────────────────────────────────────────┘
+                           │
+                           ▼
+                   docker login ccr.ccs.tencentyun.com
+                           │
+                           ▼
+┌──────────────────────────────────────────────────────────┐
+│                   ci-cd.yaml 环境变量                      │
+│  REGISTRY      = ccr.ccs.tencentyun.com                   │
+│  TCR_NAMESPACE = xys-clone                                │
+└──────────────────────────────────────────────────────────┘
+                           │
+                           ▼
+          docker push ccr.ccs.tencentyun.com/xys-clone/xys-user:latest
+```
+
+> **注意**：`DOCKER_USERNAME`（登录用 UIN）和 `TCR_NAMESPACE`（命名空间名）是不同的概念。
+> - 本地 build：`make docker-build DOCKER_USERNAME=你的UIN`
+> - CI build：workflow 自动读取 Secrets + env 组合
 
 #### 选填（K8s 接入后再配）
 

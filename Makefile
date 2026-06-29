@@ -16,8 +16,10 @@ OUT_DIR   := proto
 # ============================================================
 SERVICES  := user gateway
 
-REGISTRY  ?= docker.io
-IMAGE_NS  ?= $(DOCKER_USERNAME)
+REGISTRY  ?= ccr.ccs.tencentyun.com
+TCR_NAMESPACE ?= xys-clone
+IMAGE_NS  ?= $(TCR_NAMESPACE)
+DOCKER_USERNAME ?=
 GIT_SHA   := $(shell git rev-parse --short=7 HEAD 2>/dev/null || echo "local")
 
 # ============================================================
