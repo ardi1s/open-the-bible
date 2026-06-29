@@ -45,80 +45,59 @@ SERVICES := user gateway note
 
 ## 配置 GitHub Secrets
 
-使用腾讯云容器镜像服务 TCR（个人版免费，每月 500 个镜像免费存储）。
+使用 Docker Hub 作为镜像仓库。由于你可能是通过 GitHub 授权登录 Docker Hub 的，没有传统密码，所以需要用 Access Token 代替。
 
-### 前提：开通 TCR 个人版
+### 第一步：创建 Docker Hub Access Token
 
-1. 打开 [腾讯云容器镜像服务控制台](https://console.cloud.tencent.com/tcr)
-2. 首次使用会提示开通，选择**个人版**（免费额度），确认开通
-3. 开通后进入实例列表，点击 **ccr.ccs.tencentyun.com**（个人版默认实例）
+> ⚠️ 就算你网页端是用 GitHub 登录的，命令行 `docker login` 也不认 GitHub 授权，必须用 Access Token。
 
-### 第一步：创建命名空间
+1. 打开 [Docker Hub → Account Settings → Security](https://hub.docker.com/settings/security)
+2. 点击 **New Access Token**
+3. 随便起个名（比如 `xys-clone-ci`），权限选 **Read & Write**
+4. 点 Generate，复制生成的 token（格式：`dckr_pat_xxxxxxxxxxxxxxxxx`）
+5. **立即保存**，关闭后无法再次查看
 
-命名空间是镜像的组织目录，最终镜像路径为：
+### 第二步：确认你的 Docker Hub 用户名
 
-```
-ccr.ccs.tencentyun.com/<命名空间>/xys-user:latest
-```
+右上角头像旁边那个就是，或者 Settings 页面顶部显示的 `@username`。
 
-操作步骤：
-1. 在 TCR 控制台左侧点击 **命名空间**
-2. 点击 **新建**，填写：
-   - 命名空间名称：`xys-clone`
-   - 访问级别：选择 **公开**（拉取不需要登录，推送仍需凭证）
-3. 点击提交
-
-> 名称也可以改成你喜欢的，比如 `open-the-bible`，但需要同步修改 `ci-cd.yaml` 和 `Makefile` 中的 `TCR_NAMESPACE`。
-
-### 第二步：获取账号 ID（login 用户名）
-
-1. 在腾讯云控制台右上角，点击你的头像
-2. 点击 **账号信息**
-3. 找到 **账号 ID**（一串数字，如 `100012345678`），复制下来
-
-### 第三步：创建长期访问凭证（login 密码）
-
-1. 回到 TCR 控制台，左侧点击 **访问凭证**
-2. 点击 **新建**，会生成一个用户名和密码（token）
-   - 用户名默认与你的账号 ID 一致
-   - 密码是一长串字符，**立即复制保存**，关闭后不可查看
-3. 如果已经有凭证，也可以直接点击 **查看密码** 来获取
-
-### 第四步：填入 GitHub Secrets
+### 第三步：填入 GitHub Secrets
 
 打开仓库 → **Settings → Secrets and variables → Actions → New repository secret**，添加：
 
-| Secret | 填什么 | 来源 |
-|--------|--------|------|
-| `DOCKER_USERNAME` | 你的账号 ID（如 `100012345678`） | 第二步获取 |
-| `DOCKER_PASSWORD` | 长期访问凭证的密码 | 第三步获取 |
+| Secret | 填什么 |
+|--------|--------|
+| `DOCKER_USERNAME` | 你的 Docker Hub 用户名 |
+| `DOCKER_PASSWORD` | 第一步生成的 Access Token（`dckr_pat_...`） |
+
+---
 
 ### 对应关系
 
 ```
 ┌──────────────────────────────────────────────────────────┐
-│                        GitHub Secrets                     │
-│  DOCKER_USERNAME = 100012345678 ──▶ docker login 用户名  │
-│  DOCKER_PASSWORD = xxxxxxxx     ──▶ docker login 密码    │
+│                     GitHub Secrets                        │
+│  DOCKER_USERNAME = ardi1s         ──▶ docker login 用户名 │
+│  DOCKER_PASSWORD = dckr_pat_xxx  ──▶ docker login 密码   │
 └──────────────────────────────────────────────────────────┘
                            │
                            ▼
-                   docker login ccr.ccs.tencentyun.com
+                 docker login docker.io
                            │
                            ▼
-┌──────────────────────────────────────────────────────────┐
-│                   ci-cd.yaml 环境变量                      │
-│  REGISTRY      = ccr.ccs.tencentyun.com                   │
-│  TCR_NAMESPACE = xys-clone                                │
-└──────────────────────────────────────────────────────────┘
-                           │
-                           ▼
-          docker push ccr.ccs.tencentyun.com/xys-clone/xys-user:latest
+          docker push docker.io/ardi1s/xys-user:latest
 ```
 
-> `DOCKER_USERNAME`（登录用的账号 UIN）和 `TCR_NAMESPACE`（命名空间名）是不同概念。
-> - 本地 build：`make docker-build DOCKER_USERNAME=你的UIN`
-> - CI build：workflow 自动读取 Secrets + env 组合
+### 镜像最终路径
+
+```
+docker.io/<你的用户名>/xys-user:latest
+docker.io/<你的用户名>/xys-user:<git-sha前7位>
+docker.io/<你的用户名>/xys-gateway:latest
+docker.io/<你的用户名>/xys-gateway:<git-sha前7位>
+```
+
+---
 
 ### 选填（K8s 接入后再配）
 
@@ -146,4 +125,14 @@ git push origin main
 
 ```bash
 make ci-check
+```
+
+## 本地构建与推送镜像
+
+```bash
+# 构建
+make docker-build DOCKER_USERNAME=你的用户名
+
+# 推送（需要先 docker login）
+make docker-push DOCKER_USERNAME=你的用户名
 ```
