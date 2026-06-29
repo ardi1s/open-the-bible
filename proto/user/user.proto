@@ -1,0 +1,32 @@
+// proto/user/user.proto
+// 用户服务 Protobuf 定义。
+// 定义 UserService 的 RPC 方法及请求/响应消息结构。
+// 生成 Go 桩代码：make proto
+
+syntax = "proto3";
+
+package user;
+
+option go_package = "xys-clone/proto/user;userpb";
+
+// ──────────── 用户服务 ────────────
+service UserService {
+  // 根据 user_id 查询单个用户信息
+  rpc GetUser(GetUserReq) returns (UserResponse);
+}
+
+// ──────────── 消息定义 ────────────
+
+// 查询用户请求
+message GetUserReq {
+  int64 user_id = 1;
+}
+
+// 用户信息响应
+message UserResponse {
+  int64 id         = 1;  // 用户 ID
+  string username  = 2;  // 用户名
+  string bio       = 3;  // 个人简介
+  string avatar    = 4;  // 头像 URL
+  int64 created_at = 5;  // 注册时间（Unix 时间戳）
+}

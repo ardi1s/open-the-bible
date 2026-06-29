@@ -1,0 +1,35 @@
+# ──────────────────────────────────────────────
+# Docker Compose 编排文件
+#   一键启动 user + gateway 两个服务。
+#   服务间通过 Docker 内部 DNS 通信（user:50051）。
+#   用法：
+#     make docker-up    # 启动
+#     make docker-down  # 停止
+# ──────────────────────────────────────────────
+version: "3.8"
+
+services:
+  # ── 用户服务（gRPC，:50051）──
+  user:
+    build:
+      context: .
+      dockerfile: cmd/user/Dockerfile
+    container_name: xys-user
+    ports:
+      - "50051:50051"
+    restart: unless-stopped
+
+  # ── API 网关（HTTP，:8080）──
+  gateway:
+    build:
+      context: .
+      dockerfile: cmd/gateway/Dockerfile
+    container_name: xys-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      # 通过 Docker 内部网络连接到 user 服务
+      - USER_SERVICE_ADDR=user:50051
+    depends_on:
+      - user
+    restart: unless-stopped
