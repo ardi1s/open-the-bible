@@ -1,0 +1,160 @@
+# ──────────────────────────────────────────────
+# CI/CD 流水线
+#   触发：push main / PR → main
+#   阶段：Lint&Test → Build&Push → Deploy
+#
+# 新增服务：在 SERVICES 数组中追加名字即可自动构建。
+# ──────────────────────────────────────────────
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  # ──── 镜像仓库配置（按需修改）────
+  # Docker Hub          → docker.io
+  # 阿里云容器镜像服务   → registry.cn-hangzhou.aliyuncs.com
+  # GitHub Container    → ghcr.io
+  REGISTRY: docker.io
+
+  # ──── 服务清单（新增服务在此追加）────
+  # 约定：每个服务必须有 cmd/<name>/Dockerfile
+  SERVICES: '["user","gateway"]'
+
+  GO_VERSION: "1.24"
+
+jobs:
+  # ════════════════════════════════════════════
+  # Job 1: 代码检查 + 单元测试
+  #   每次 push / PR 均触发
+  # ════════════════════════════════════════════
+  lint-and-test:
+    name: Lint & Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Go 环境
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: go vet 静态检查
+        run: go vet ./...
+
+      - name: go test 单元测试（含竞态检测）
+        run: go test ./... -v -count=1 -race
+
+  # ════════════════════════════════════════════
+  # Job 2: 构建并推送 Docker 镜像
+  #   仅 push main 时触发（PR 不推送镜像）
+  #   使用矩阵策略并行构建所有服务
+  # ════════════════════════════════════════════
+  build-and-push:
+    name: Build & Push
+    needs: lint-and-test
+    # 仅在 push main 时执行，PR 跳过
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false   # 单个服务失败不影响其他服务
+      matrix:
+        service: ${{ fromJSON(env.SERVICES) }}
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 计算镜像标签
+        id: meta
+        run: |
+          SHA7="$(echo "${{ github.sha }}" | cut -c1-7)"
+          REPO="${{ secrets.DOCKER_USERNAME }}"
+          IMG="${{ env.REGISTRY }}/${REPO}/xys-${{ matrix.service }}"
+          echo "img=${IMG}"                 >> $GITHUB_OUTPUT
+          echo "tag_sha=${IMG}:${SHA7}"     >> $GITHUB_OUTPUT
+          echo "tag_latest=${IMG}:latest"   >> $GITHUB_OUTPUT
+          echo "sha7=${SHA7}"               >> $GITHUB_OUTPUT
+
+      - name: 登录镜像仓库
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: 构建 ${{ matrix.service }} 镜像
+        run: >
+          docker build
+          -t ${{ steps.meta.outputs.tag_sha }}
+          -t ${{ steps.meta.outputs.tag_latest }}
+          -f cmd/${{ matrix.service }}/Dockerfile
+          .
+
+      - name: 推送 ${{ matrix.service }} 镜像
+        run: |
+          docker push ${{ steps.meta.outputs.tag_sha }}
+          docker push ${{ steps.meta.outputs.tag_latest }}
+
+      - name: 输出构建摘要
+        run: |
+          echo "✅ ${{ matrix.service }} → ${{ steps.meta.outputs.tag_sha }}"
+          echo "✅ ${{ matrix.service }} → ${{ steps.meta.outputs.tag_latest }}"
+
+  # ════════════════════════════════════════════
+  # Job 3: 部署 + 冒烟测试
+  #   有 KUBE_CONFIG 时自动执行 kubectl 滚动更新
+  #   未配置时仅输出镜像信息，待后续接入 K8s 集群
+  # ════════════════════════════════════════════
+  deploy:
+    name: Deploy & Smoke Test
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJSON(env.SERVICES) }}
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 计算镜像标签
+        id: meta
+        run: |
+          SHA7="$(echo "${{ github.sha }}" | cut -c1-7)"
+          REPO="${{ secrets.DOCKER_USERNAME }}"
+          IMG="${{ env.REGISTRY }}/${REPO}/xys-${{ matrix.service }}"
+          echo "tag=${IMG}:${SHA7}" >> $GITHUB_OUTPUT
+
+      # ── 条件部署：有 kubeconfig 则滚动更新，无则跳过 ──
+      - name: 部署到 Kubernetes（如已配置）
+        env:
+          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+        run: |
+          IMG="${{ steps.meta.outputs.tag }}"
+          if [ -z "${KUBE_CONFIG}" ]; then
+            echo "⏭  未配置 KUBE_CONFIG Secret，跳过 Kubernetes 部署。"
+            echo ""
+            echo "   镜像已就绪: ${IMG}"
+            echo "   配置 KUBE_CONFIG 后，再次 push 即可自动滚动更新。"
+          else
+            mkdir -p "${HOME}/.kube"
+            echo "${KUBE_CONFIG}" | base64 -d > "${HOME}/.kube/config"
+            kubectl set image deployment/xys-${{ matrix.service }} \
+              xys-${{ matrix.service }}="${IMG}" --record
+            echo "🚀 已更新 Deployment xys-${{ matrix.service }} → ${IMG}"
+          fi
+
+      # ── 冒烟测试提示（gateway 服务）──
+      - name: 冒烟测试 — gateway /health
+        if: matrix.service == 'gateway'
+        run: |
+          echo "💡 部署完成后，运行以下冒烟测试："
+          echo "   curl http://<gateway-host>:8080/health"
+          echo ""
+          echo "   预期返回: {\"status\":\"ok\"}"
