@@ -1,7 +1,10 @@
-.PHONY: proto proto-user proto-clean run-user run-gateway build-user build-gateway \
+.PHONY: proto proto-user proto-note proto-clean \
+        run-user run-gateway run-note \
+        build-user build-gateway build-note build-all \
         test test-cover lint ci-check \
         docker-build docker-build-all docker-push docker-push-all \
-        docker-up docker-down docker-build-user docker-build-gateway
+        docker-up docker-down \
+        docker-build-user docker-build-gateway docker-build-note
 
 # 自动探测 GOPATH，确保 protoc 插件在 PATH 中
 GOPATH    := $(shell go env GOPATH)
@@ -12,9 +15,9 @@ OUT_DIR   := proto
 
 # ============================================================
 # ★ 服务清单 —— 新增服务只需在此加一行
-#   CI/CD 工作流中的 SERVICES 对应更新为 '["user","gateway","note",...]'
+#   CI/CD 工作流中的 SERVICES 对应更新
 # ============================================================
-SERVICES  := user gateway
+SERVICES  := user gateway note
 
 REGISTRY  ?= docker.io
 DOCKER_USERNAME ?=
@@ -31,7 +34,7 @@ install-tools:
 # ============================================================
 # Proto 桩代码
 # ============================================================
-proto: proto-user
+proto: proto-user proto-note
 
 proto-user:
 	protoc \
@@ -42,8 +45,18 @@ proto-user:
 		--go-grpc_opt=paths=source_relative \
 		$(PROTO_DIR)/user/user.proto
 
+proto-note:
+	protoc \
+		--proto_path=$(PROTO_DIR) \
+		--go_out=$(OUT_DIR) \
+		--go_opt=paths=source_relative \
+		--go-grpc_out=$(OUT_DIR) \
+		--go-grpc_opt=paths=source_relative \
+		$(PROTO_DIR)/note/note.proto
+
 proto-clean:
 	rm -f $(PROTO_DIR)/user/*.pb.go
+	rm -f $(PROTO_DIR)/note/*.pb.go
 
 # ============================================================
 # 运行
@@ -54,6 +67,9 @@ run-user:
 run-gateway:
 	go run ./cmd/gateway/main.go
 
+run-note:
+	go run ./cmd/note/main.go
+
 # ============================================================
 # 编译
 # ============================================================
@@ -63,6 +79,9 @@ build-user:
 build-gateway:
 	go build -o bin/gateway ./cmd/gateway
 
+build-note:
+	go build -o bin/note ./cmd/note
+
 build-all:
 	@for svc in $(SERVICES); do \
 		echo "→ build $$svc"; \
@@ -70,7 +89,7 @@ build-all:
 	done
 
 # ============================================================
-# 测试 & 代码检查（CI 核心步骤）
+# 测试 & 代码检查
 # ============================================================
 test:
 	go test ./... -v -count=1
@@ -86,8 +105,7 @@ ci-check: lint test
 	@echo "✅ CI check passed"
 
 # ============================================================
-# Docker 构建（按服务）
-# 用法: make docker-build-user DOCKER_USERNAME=xxx
+# Docker 构建（按服务，自动遍历 SERVICES 列表）
 # ============================================================
 define docker_build
 docker-build-$(1):

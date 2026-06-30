@@ -1,29 +1,58 @@
 // Package user 实现用户服务的核心业务逻辑。
-// 当前为开发初期，GetUser 返回 mock 数据，后续将接入 MySQL/Redis。
+// GetUser 优先从 MySQL（GORM）查询，未命中时返回 mock 数据。
 package user
 
 import (
 	"context"
 	"time"
 
+	"gorm.io/gorm"
+
 	userpb "xys-clone/proto/user"
 )
 
 // Server 实现了 proto/user 中定义的 UserServiceServer 接口。
-// 嵌入 UnimplementedUserServiceServer 以保证向前兼容（proto 新增方法时编译不会报错）。
 type Server struct {
 	userpb.UnimplementedUserServiceServer
+	db *gorm.DB
 }
 
-// NewServer 创建用户服务实例。
-func NewServer() *Server {
-	return &Server{}
+// NewServer 创建用户服务实例。db 为 nil 时纯 mock 运行。
+func NewServer(db *gorm.DB) *Server {
+	return &Server{db: db}
 }
 
-// GetUser 根据请求中的 user_id 返回用户信息。
-// 当前为 mock 实现，始终返回固定数据，后续改为从数据库查询。
+// AutoMigrate 自动建表。
+func (s *Server) AutoMigrate() error {
+	if s.db == nil {
+		return nil
+	}
+	return s.db.AutoMigrate(&User{})
+}
+
+// GetUser 根据 user_id 查询用户。
+// 优先查 MySQL，未命中时返回 mock 数据（保证开发阶段始终可用）。
 func (s *Server) GetUser(ctx context.Context, req *userpb.GetUserReq) (*userpb.UserResponse, error) {
-	// TODO: 接入 MySQL 后改为真实查询
+	// 有 DB 连接时，先查真实数据
+	if s.db != nil {
+		var user User
+		err := s.db.WithContext(ctx).First(&user, req.UserId).Error
+		if err == nil {
+			return &userpb.UserResponse{
+				Id:        user.ID,
+				Username:  user.Username,
+				Bio:       user.Bio,
+				Avatar:    user.Avatar,
+				CreatedAt: user.CreatedAt,
+			}, nil
+		}
+		if err != gorm.ErrRecordNotFound {
+			return nil, err
+		}
+		// 未命中 → 走 mock
+	}
+
+	// mock 兜底
 	return &userpb.UserResponse{
 		Id:        req.UserId,
 		Username:  "mock_user",

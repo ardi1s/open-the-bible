@@ -1,35 +1,17 @@
 # ──────────────────────────────────────────────
-# Docker Compose 编排文件
-#   一键启动 user + gateway 两个服务。
-#   服务间通过 Docker 内部 DNS 通信（user:50051）。
+# Docker Compose（仅本地没有的基础设施）
+#   MySQL 直接用本机 Homebrew 安装的即可。
+#   RabbitMQ 本机没有，走容器。
 #   用法：
-#     make docker-up    # 启动
-#     make docker-down  # 停止
+#     docker-compose up -d            # 启动 RabbitMQ
+#     make run-user / run-note / run-gateway  # 本地跑服务
 # ──────────────────────────────────────────────
-version: "3.8"
-
 services:
-  # ── 用户服务（gRPC，:50051）──
-  user:
-    build:
-      context: .
-      dockerfile: cmd/user/Dockerfile
-    container_name: xys-user
+  # ── RabbitMQ（含管理界面 :15672）──
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: xys-rabbitmq
     ports:
-      - "50051:50051"
-    restart: unless-stopped
-
-  # ── API 网关（HTTP，:8080）──
-  gateway:
-    build:
-      context: .
-      dockerfile: cmd/gateway/Dockerfile
-    container_name: xys-gateway
-    ports:
-      - "8080:8080"
-    environment:
-      # 通过 Docker 内部网络连接到 user 服务
-      - USER_SERVICE_ADDR=user:50051
-    depends_on:
-      - user
+      - "5672:5672"    # AMQP
+      - "15672:15672"  # 管理界面
     restart: unless-stopped

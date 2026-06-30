@@ -1,5 +1,5 @@
 // Package user 包含用户服务的单元测试。
-// 当前针对 mock 实现做基础校验，接入数据库后需扩展测试用例。
+// GetUser 优先查 MySQL，未命中时走 mock 兜底。
 package user
 
 import (
@@ -9,10 +9,9 @@ import (
 	userpb "xys-clone/proto/user"
 )
 
-// TestGetUser 验证 GetUser mock 返回的各项字段是否正确。
-// 测试覆盖：错误为空、返回 id 与入参一致、username / bio / avatar 非空、created_at > 0。
-func TestGetUser(t *testing.T) {
-	s := NewServer()
+// TestGetUserMock 验证无 DB 连接时（纯 mock）GetUser 返回各字段正确。
+func TestGetUserMock(t *testing.T) {
+	s := NewServer(nil) // db = nil → 纯 mock
 
 	resp, err := s.GetUser(context.Background(), &userpb.GetUserReq{UserId: 1})
 	if err != nil {

@@ -20,7 +20,7 @@ env:
 
   # ──── 服务清单（新增服务在此追加）────
   # 约定：每个服务必须有 cmd/<name>/Dockerfile
-  SERVICES: '["user","gateway"]'
+  SERVICES: '["user","gateway","note"]'
 
   GO_VERSION: "1.24"
 

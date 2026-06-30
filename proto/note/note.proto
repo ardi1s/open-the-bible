@@ -1,0 +1,49 @@
+// proto/note/note.proto
+// 笔记服务 Protobuf 定义。
+// 定义 NoteService 的 RPC 方法及请求/响应消息结构。
+// 生成 Go 桩代码：make proto
+
+syntax = "proto3";
+
+package note;
+
+option go_package = "xys-clone/proto/note;notepb";
+
+// ──────────── 笔记服务 ────────────
+service NoteService {
+  // 创建一篇笔记
+  rpc CreateNote(CreateNoteReq) returns (CreateNoteResp);
+
+  // 查询笔记详情
+  rpc GetNoteDetail(GetNoteDetailReq) returns (NoteResponse);
+}
+
+// ──────────── 创建笔记 ────────────
+
+message CreateNoteReq {
+  int64  user_id         = 1;
+  string title           = 2;
+  string content         = 3;
+  repeated string image_urls = 4;  // 图片 URL 列表
+  repeated string tags       = 5;  // 标签列表
+}
+
+message CreateNoteResp {
+  int64 note_id = 1;   // 新创建的笔记 ID
+}
+
+// ──────────── 查询笔记 ────────────
+
+message GetNoteDetailReq {
+  int64 note_id = 1;
+}
+
+message NoteResponse {
+  int64  id              = 1;
+  int64  user_id         = 2;
+  string title           = 3;
+  string content         = 4;
+  repeated string image_urls = 5;
+  repeated string tags       = 6;
+  int64  created_at      = 7;   // Unix 时间戳
+}
