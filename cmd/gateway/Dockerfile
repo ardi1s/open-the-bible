@@ -1,12 +1,12 @@
 # ──────────────────────────────────────────────
 # Gateway 服务 Dockerfile
-#   阶段一：Go 编译（golang:1.24-alpine）
+#   阶段一：Go 编译（golang:1.25-alpine）
 #   阶段二：最小运行镜像（alpine:3.20）
 #   通过环境变量 USER_SERVICE_ADDR 指定下游 user 地址
 # ──────────────────────────────────────────────
 
 # ── 构建阶段 ──
-FROM golang:1.24-alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 WORKDIR /app
 

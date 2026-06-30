@@ -1,11 +1,11 @@
 # ──────────────────────────────────────────────
 # User 服务 Dockerfile
-#   阶段一：Go 编译（golang:1.24-alpine）
+#   阶段一：Go 编译（golang:1.25-alpine）
 #   阶段二：最小运行镜像（alpine:3.20），仅包含二进制 + CA 证书
 # ──────────────────────────────────────────────
 
 # ── 构建阶段 ──
-FROM golang:1.24-alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 WORKDIR /app
 

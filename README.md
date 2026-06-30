@@ -29,7 +29,7 @@
 
 ## 环境要求
 
-- Go 1.24+
+- Go 1.25+
 - protoc（Protocol Buffers 编译器）
 - Docker & Docker Compose
 - MySQL 8.0（Docker Compose 内置）
