@@ -18,9 +18,8 @@ env:
   # 默认即 docker.io，留空也行，显式写上更清晰
   REGISTRY: docker.io
 
-  # ──── 服务清单（新增服务在此追加）────
-  # 约定：每个服务必须有 cmd/<name>/Dockerfile
-  SERVICES: '["user","gateway","note"]'
+  # ──── 服务清单 ────
+  # 新增服务：在下方两个 matrix.service 数组中追加名字，并确保 cmd/<name>/Dockerfile 存在
 
   GO_VERSION: "1.24"
 
@@ -61,7 +60,7 @@ jobs:
     strategy:
       fail-fast: false   # 单个服务失败不影响其他服务
       matrix:
-        service: ${{ fromJSON(env.SERVICES) }}
+        service: ["user","gateway","note"]
 
     steps:
       - name: 检出代码
@@ -114,7 +113,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        service: ${{ fromJSON(env.SERVICES) }}
+        service: ["user","gateway","note"]
 
     steps:
       - name: 检出代码
