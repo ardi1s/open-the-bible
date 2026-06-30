@@ -24,7 +24,12 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	UserService_GetUser_FullMethodName = "/user.UserService/GetUser"
+	UserService_GetUser_FullMethodName      = "/user.UserService/GetUser"
+	UserService_Follow_FullMethodName       = "/user.UserService/Follow"
+	UserService_Unfollow_FullMethodName     = "/user.UserService/Unfollow"
+	UserService_GetFollowers_FullMethodName = "/user.UserService/GetFollowers"
+	UserService_GetFollowing_FullMethodName = "/user.UserService/GetFollowing"
+	UserService_IsFollowing_FullMethodName  = "/user.UserService/IsFollowing"
 )
 
 // UserServiceClient is the client API for UserService service.
@@ -35,6 +40,12 @@ const (
 type UserServiceClient interface {
 	// 根据 user_id 查询单个用户信息
 	GetUser(ctx context.Context, in *GetUserReq, opts ...grpc.CallOption) (*UserResponse, error)
+	// ── 关注 ──
+	Follow(ctx context.Context, in *FollowReq, opts ...grpc.CallOption) (*FollowResp, error)
+	Unfollow(ctx context.Context, in *UnfollowReq, opts ...grpc.CallOption) (*UnfollowResp, error)
+	GetFollowers(ctx context.Context, in *GetFollowersReq, opts ...grpc.CallOption) (*GetFollowersResp, error)
+	GetFollowing(ctx context.Context, in *GetFollowingReq, opts ...grpc.CallOption) (*GetFollowingResp, error)
+	IsFollowing(ctx context.Context, in *IsFollowingReq, opts ...grpc.CallOption) (*IsFollowingResp, error)
 }
 
 type userServiceClient struct {
@@ -55,6 +66,56 @@ func (c *userServiceClient) GetUser(ctx context.Context, in *GetUserReq, opts ..
 	return out, nil
 }
 
+func (c *userServiceClient) Follow(ctx context.Context, in *FollowReq, opts ...grpc.CallOption) (*FollowResp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(FollowResp)
+	err := c.cc.Invoke(ctx, UserService_Follow_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) Unfollow(ctx context.Context, in *UnfollowReq, opts ...grpc.CallOption) (*UnfollowResp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UnfollowResp)
+	err := c.cc.Invoke(ctx, UserService_Unfollow_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) GetFollowers(ctx context.Context, in *GetFollowersReq, opts ...grpc.CallOption) (*GetFollowersResp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetFollowersResp)
+	err := c.cc.Invoke(ctx, UserService_GetFollowers_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) GetFollowing(ctx context.Context, in *GetFollowingReq, opts ...grpc.CallOption) (*GetFollowingResp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetFollowingResp)
+	err := c.cc.Invoke(ctx, UserService_GetFollowing_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) IsFollowing(ctx context.Context, in *IsFollowingReq, opts ...grpc.CallOption) (*IsFollowingResp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(IsFollowingResp)
+	err := c.cc.Invoke(ctx, UserService_IsFollowing_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServiceServer is the server API for UserService service.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility.
@@ -63,6 +124,12 @@ func (c *userServiceClient) GetUser(ctx context.Context, in *GetUserReq, opts ..
 type UserServiceServer interface {
 	// 根据 user_id 查询单个用户信息
 	GetUser(context.Context, *GetUserReq) (*UserResponse, error)
+	// ── 关注 ──
+	Follow(context.Context, *FollowReq) (*FollowResp, error)
+	Unfollow(context.Context, *UnfollowReq) (*UnfollowResp, error)
+	GetFollowers(context.Context, *GetFollowersReq) (*GetFollowersResp, error)
+	GetFollowing(context.Context, *GetFollowingReq) (*GetFollowingResp, error)
+	IsFollowing(context.Context, *IsFollowingReq) (*IsFollowingResp, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -75,6 +142,21 @@ type UnimplementedUserServiceServer struct{}
 
 func (UnimplementedUserServiceServer) GetUser(context.Context, *GetUserReq) (*UserResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetUser not implemented")
+}
+func (UnimplementedUserServiceServer) Follow(context.Context, *FollowReq) (*FollowResp, error) {
+	return nil, status.Error(codes.Unimplemented, "method Follow not implemented")
+}
+func (UnimplementedUserServiceServer) Unfollow(context.Context, *UnfollowReq) (*UnfollowResp, error) {
+	return nil, status.Error(codes.Unimplemented, "method Unfollow not implemented")
+}
+func (UnimplementedUserServiceServer) GetFollowers(context.Context, *GetFollowersReq) (*GetFollowersResp, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetFollowers not implemented")
+}
+func (UnimplementedUserServiceServer) GetFollowing(context.Context, *GetFollowingReq) (*GetFollowingResp, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetFollowing not implemented")
+}
+func (UnimplementedUserServiceServer) IsFollowing(context.Context, *IsFollowingReq) (*IsFollowingResp, error) {
+	return nil, status.Error(codes.Unimplemented, "method IsFollowing not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 func (UnimplementedUserServiceServer) testEmbeddedByValue()                     {}
@@ -115,6 +197,96 @@ func _UserService_GetUser_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_Follow_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(FollowReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).Follow(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_Follow_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).Follow(ctx, req.(*FollowReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_Unfollow_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UnfollowReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).Unfollow(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_Unfollow_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).Unfollow(ctx, req.(*UnfollowReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_GetFollowers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetFollowersReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).GetFollowers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_GetFollowers_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).GetFollowers(ctx, req.(*GetFollowersReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_GetFollowing_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetFollowingReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).GetFollowing(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_GetFollowing_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).GetFollowing(ctx, req.(*GetFollowingReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_IsFollowing_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(IsFollowingReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).IsFollowing(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_IsFollowing_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).IsFollowing(ctx, req.(*IsFollowingReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -125,6 +297,26 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetUser",
 			Handler:    _UserService_GetUser_Handler,
+		},
+		{
+			MethodName: "Follow",
+			Handler:    _UserService_Follow_Handler,
+		},
+		{
+			MethodName: "Unfollow",
+			Handler:    _UserService_Unfollow_Handler,
+		},
+		{
+			MethodName: "GetFollowers",
+			Handler:    _UserService_GetFollowers_Handler,
+		},
+		{
+			MethodName: "GetFollowing",
+			Handler:    _UserService_GetFollowing_Handler,
+		},
+		{
+			MethodName: "IsFollowing",
+			Handler:    _UserService_IsFollowing_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

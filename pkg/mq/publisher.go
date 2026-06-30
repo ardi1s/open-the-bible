@@ -1,6 +1,6 @@
-// Package note —— RabbitMQ 事件发布器。
-// 提供连接重试、通道恢复与消息发布能力。
-package note
+// Package mq 提供 RabbitMQ 事件发布器。
+// 各微服务通过 NewPublisher 获取带重连守护的发布实例。
+package mq
 
 import (
 	"fmt"
@@ -14,34 +14,33 @@ import (
 
 // Publisher 封装 RabbitMQ 连接与发布逻辑。
 type Publisher struct {
-	conn    *amqp.Connection
-	channel *amqp.Channel
-	done    chan struct{}
+	conn      *amqp.Connection
+	channel   *amqp.Channel
+	exchanges []string // 需声明的 exchange 列表
+	done      chan struct{}
 }
 
 // NewPublisher 创建 RabbitMQ 发布器，并启动后台重连守护。
-// 环境变量：
+// exchanges: 需要声明的 exchange 名称列表（topic 类型，持久化）。
 //
-//	RABBITMQ_URL — 连接地址，默认 amqp://guest:guest@127.0.0.1:5672/
-func NewPublisher() (*Publisher, error) {
+// 环境变量 RABBITMQ_URL 指定连接地址，默认 amqp://guest:guest@127.0.0.1:5672/
+func NewPublisher(exchanges []string) (*Publisher, error) {
 	url := os.Getenv("RABBITMQ_URL")
 	if url == "" {
 		url = "amqp://guest:guest@127.0.0.1:5672/"
 	}
 
-	p := &Publisher{done: make(chan struct{})}
+	p := &Publisher{exchanges: exchanges, done: make(chan struct{})}
 
 	if err := p.connect(url); err != nil {
 		return nil, err
 	}
 
-	// 启动连接/通道 重连守护 goroutine
 	go p.reconnectLoop(url)
-
 	return p, nil
 }
 
-// connect 建立连接并声明 exchange。
+// connect 建立连接、创建通道并声明所有 exchange。
 func (p *Publisher) connect(url string) error {
 	conn, err := amqp.Dial(url)
 	if err != nil {
@@ -54,20 +53,14 @@ func (p *Publisher) connect(url string) error {
 		return fmt.Errorf("Channel: %w", err)
 	}
 
-	// 声明 exchange（topic 类型，持久化）
-	err = ch.ExchangeDeclare(
-		"note.events", // name
-		"topic",       // type
-		true,          // durable
-		false,         // auto-deleted
-		false,         // internal
-		false,         // no-wait
-		nil,           // args
-	)
-	if err != nil {
-		ch.Close()
-		conn.Close()
-		return fmt.Errorf("ExchangeDeclare: %w", err)
+	for _, ex := range p.exchanges {
+		err = ch.ExchangeDeclare(ex, "topic", true, false, false, false, nil)
+		if err != nil {
+			ch.Close()
+			conn.Close()
+			return fmt.Errorf("ExchangeDeclare(%s): %w", ex, err)
+		}
+		log.Printf("[mq] exchange 已声明: %s", ex)
 	}
 
 	p.conn = conn
@@ -83,13 +76,13 @@ func (p *Publisher) Publish(exchange, routingKey string, body []byte) error {
 	}
 
 	return p.channel.Publish(
-		exchange,    // exchange
-		routingKey,  // routing key
-		false,       // mandatory
-		false,       // immediate
+		exchange,   // exchange
+		routingKey, // routing key
+		false,      // mandatory
+		false,      // immediate
 		amqp.Publishing{
 			ContentType:  "application/json",
-			DeliveryMode: amqp.Persistent, // 持久化
+			DeliveryMode: amqp.Persistent,
 			Timestamp:    time.Now(),
 			Body:         body,
 		},
@@ -114,7 +107,6 @@ func (p *Publisher) reconnectLoop(url string) {
 
 		for i := range math.MaxInt {
 			if err := p.connect(url); err == nil {
-				// 重新注册关闭通知
 				notifyClose = make(chan *amqp.Error)
 				p.conn.NotifyClose(notifyClose)
 				log.Println("[mq] 重连成功")

@@ -1,17 +1,11 @@
 # ──────────────────────────────────────────────
 # Docker Compose（仅本地没有的基础设施）
-#   MySQL 直接用本机 Homebrew 安装的即可。
-#   RabbitMQ 本机没有，走容器。
-#   用法：
-#     docker-compose up -d            # 启动 RabbitMQ
-#     make run-user / run-note / run-gateway  # 本地跑服务
+#   MySQL → 本机 Homebrew 安装的，不需要容器
+#   RabbitMQ → 本机 Homebrew 安装的，不需要容器
+#   微服务 → 本地 go run，不需要容器
+#
+#   目前 docker-compose 为空，仅作为模板保留。
+#   后续上线到 K8s 时再补充。
 # ──────────────────────────────────────────────
 services:
-  # ── RabbitMQ（含管理界面 :15672）──
-  rabbitmq:
-    image: rabbitmq:3.13-management-alpine
-    container_name: xys-rabbitmq
-    ports:
-      - "5672:5672"    # AMQP
-      - "15672:15672"  # 管理界面
-    restart: unless-stopped
+  # 暂无

@@ -13,6 +13,7 @@ import (
 
 	notepb "xys-clone/proto/note"
 	"xys-clone/pkg/db"
+	"xys-clone/pkg/mq"
 	notesvc "xys-clone/services/note"
 )
 
@@ -24,13 +25,13 @@ func main() {
 	}
 
 	// ── 连接 RabbitMQ（带重连）──
-	mq, err := notesvc.NewPublisher()
+	mqPublisher, err := mq.NewPublisher([]string{"note.events"})
 	if err != nil {
 		log.Printf("[warn] RabbitMQ 连接失败（消息通知将跳过）: %v", err)
 	}
 
 	// ── 创建服务实例 & 自动建表 ──
-	svc := notesvc.NewServer(gormDB, mq)
+	svc := notesvc.NewServer(gormDB, mqPublisher)
 	if err := svc.AutoMigrate(); err != nil {
 		log.Fatalf("AutoMigrate 失败: %v", err)
 	}

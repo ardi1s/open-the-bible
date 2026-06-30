@@ -11,14 +11,13 @@ import (
 
 // TestGetUserMock 验证无 DB 连接时（纯 mock）GetUser 返回各字段正确。
 func TestGetUserMock(t *testing.T) {
-	s := NewServer(nil) // db = nil → 纯 mock
+	s := NewServer(nil, nil) // db = nil → 纯 mock
 
 	resp, err := s.GetUser(context.Background(), &userpb.GetUserReq{UserId: 1})
 	if err != nil {
 		t.Fatalf("GetUser 返回错误: %v", err)
 	}
 
-	// 校验返回字段
 	if resp.Id != 1 {
 		t.Errorf("期望 Id = 1，实际 = %d", resp.Id)
 	}

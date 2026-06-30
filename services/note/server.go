@@ -12,18 +12,19 @@ import (
 	"gorm.io/gorm"
 
 	notepb "xys-clone/proto/note"
+	"xys-clone/pkg/mq"
 )
 
 // Server 实现了 proto/note 中定义的 NoteServiceServer 接口。
 type Server struct {
 	notepb.UnimplementedNoteServiceServer
 	db *gorm.DB
-	mq *Publisher
+	mq *mq.Publisher
 }
 
 // NewServer 创建笔记服务实例。
 // db: GORM 数据库连接；mq: RabbitMQ 发布器（可为 nil，跳过消息发布）。
-func NewServer(db *gorm.DB, mq *Publisher) *Server {
+func NewServer(db *gorm.DB, mq *mq.Publisher) *Server {
 	return &Server{db: db, mq: mq}
 }
 

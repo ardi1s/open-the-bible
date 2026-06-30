@@ -26,7 +26,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// 查询用户请求
 type GetUserReq struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserId        int64                  `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
@@ -71,7 +70,6 @@ func (x *GetUserReq) GetUserId() int64 {
 	return 0
 }
 
-// 用户信息响应
 type UserResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`                                // 用户 ID
@@ -148,6 +146,594 @@ func (x *UserResponse) GetCreatedAt() int64 {
 	return 0
 }
 
+type FollowReq struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        int64                  `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`                     // 操作者（关注方）
+	FolloweeId    int64                  `protobuf:"varint,2,opt,name=followee_id,json=followeeId,proto3" json:"followee_id,omitempty"`         // 被关注方
+	SourceNoteId  int64                  `protobuf:"varint,3,opt,name=source_note_id,json=sourceNoteId,proto3" json:"source_note_id,omitempty"` // 从哪篇笔记关注的（可选，默认 0）
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FollowReq) Reset() {
+	*x = FollowReq{}
+	mi := &file_user_user_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FollowReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FollowReq) ProtoMessage() {}
+
+func (x *FollowReq) ProtoReflect() protoreflect.Message {
+	mi := &file_user_user_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FollowReq.ProtoReflect.Descriptor instead.
+func (*FollowReq) Descriptor() ([]byte, []int) {
+	return file_user_user_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *FollowReq) GetUserId() int64 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
+}
+
+func (x *FollowReq) GetFolloweeId() int64 {
+	if x != nil {
+		return x.FolloweeId
+	}
+	return 0
+}
+
+func (x *FollowReq) GetSourceNoteId() int64 {
+	if x != nil {
+		return x.SourceNoteId
+	}
+	return 0
+}
+
+type FollowResp struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Ok            bool                   `protobuf:"varint,1,opt,name=ok,proto3" json:"ok,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FollowResp) Reset() {
+	*x = FollowResp{}
+	mi := &file_user_user_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FollowResp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FollowResp) ProtoMessage() {}
+
+func (x *FollowResp) ProtoReflect() protoreflect.Message {
+	mi := &file_user_user_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FollowResp.ProtoReflect.Descriptor instead.
+func (*FollowResp) Descriptor() ([]byte, []int) {
+	return file_user_user_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *FollowResp) GetOk() bool {
+	if x != nil {
+		return x.Ok
+	}
+	return false
+}
+
+type UnfollowReq struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        int64                  `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`             // 操作者（取关方）
+	FolloweeId    int64                  `protobuf:"varint,2,opt,name=followee_id,json=followeeId,proto3" json:"followee_id,omitempty"` // 被取关方
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UnfollowReq) Reset() {
+	*x = UnfollowReq{}
+	mi := &file_user_user_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UnfollowReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UnfollowReq) ProtoMessage() {}
+
+func (x *UnfollowReq) ProtoReflect() protoreflect.Message {
+	mi := &file_user_user_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UnfollowReq.ProtoReflect.Descriptor instead.
+func (*UnfollowReq) Descriptor() ([]byte, []int) {
+	return file_user_user_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *UnfollowReq) GetUserId() int64 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
+}
+
+func (x *UnfollowReq) GetFolloweeId() int64 {
+	if x != nil {
+		return x.FolloweeId
+	}
+	return 0
+}
+
+type UnfollowResp struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Ok            bool                   `protobuf:"varint,1,opt,name=ok,proto3" json:"ok,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UnfollowResp) Reset() {
+	*x = UnfollowResp{}
+	mi := &file_user_user_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UnfollowResp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UnfollowResp) ProtoMessage() {}
+
+func (x *UnfollowResp) ProtoReflect() protoreflect.Message {
+	mi := &file_user_user_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UnfollowResp.ProtoReflect.Descriptor instead.
+func (*UnfollowResp) Descriptor() ([]byte, []int) {
+	return file_user_user_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *UnfollowResp) GetOk() bool {
+	if x != nil {
+		return x.Ok
+	}
+	return false
+}
+
+type GetFollowersReq struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        int64                  `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	Page          int32                  `protobuf:"varint,2,opt,name=page,proto3" json:"page,omitempty"`                         // 页码，从 1 开始
+	PageSize      int32                  `protobuf:"varint,3,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"` // 每页条数，默认 20
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetFollowersReq) Reset() {
+	*x = GetFollowersReq{}
+	mi := &file_user_user_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetFollowersReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetFollowersReq) ProtoMessage() {}
+
+func (x *GetFollowersReq) ProtoReflect() protoreflect.Message {
+	mi := &file_user_user_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetFollowersReq.ProtoReflect.Descriptor instead.
+func (*GetFollowersReq) Descriptor() ([]byte, []int) {
+	return file_user_user_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *GetFollowersReq) GetUserId() int64 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
+}
+
+func (x *GetFollowersReq) GetPage() int32 {
+	if x != nil {
+		return x.Page
+	}
+	return 0
+}
+
+func (x *GetFollowersReq) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+type FollowUserInfo struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Username      string                 `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`
+	Avatar        string                 `protobuf:"bytes,3,opt,name=avatar,proto3" json:"avatar,omitempty"`
+	FollowedAt    int64                  `protobuf:"varint,4,opt,name=followed_at,json=followedAt,proto3" json:"followed_at,omitempty"` // 关注时间（Unix 时间戳）
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FollowUserInfo) Reset() {
+	*x = FollowUserInfo{}
+	mi := &file_user_user_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FollowUserInfo) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FollowUserInfo) ProtoMessage() {}
+
+func (x *FollowUserInfo) ProtoReflect() protoreflect.Message {
+	mi := &file_user_user_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FollowUserInfo.ProtoReflect.Descriptor instead.
+func (*FollowUserInfo) Descriptor() ([]byte, []int) {
+	return file_user_user_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *FollowUserInfo) GetId() int64 {
+	if x != nil {
+		return x.Id
+	}
+	return 0
+}
+
+func (x *FollowUserInfo) GetUsername() string {
+	if x != nil {
+		return x.Username
+	}
+	return ""
+}
+
+func (x *FollowUserInfo) GetAvatar() string {
+	if x != nil {
+		return x.Avatar
+	}
+	return ""
+}
+
+func (x *FollowUserInfo) GetFollowedAt() int64 {
+	if x != nil {
+		return x.FollowedAt
+	}
+	return 0
+}
+
+type GetFollowersResp struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Users         []*FollowUserInfo      `protobuf:"bytes,1,rep,name=users,proto3" json:"users,omitempty"`
+	Total         int64                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"` // 总数
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetFollowersResp) Reset() {
+	*x = GetFollowersResp{}
+	mi := &file_user_user_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetFollowersResp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetFollowersResp) ProtoMessage() {}
+
+func (x *GetFollowersResp) ProtoReflect() protoreflect.Message {
+	mi := &file_user_user_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetFollowersResp.ProtoReflect.Descriptor instead.
+func (*GetFollowersResp) Descriptor() ([]byte, []int) {
+	return file_user_user_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *GetFollowersResp) GetUsers() []*FollowUserInfo {
+	if x != nil {
+		return x.Users
+	}
+	return nil
+}
+
+func (x *GetFollowersResp) GetTotal() int64 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
+type GetFollowingReq struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        int64                  `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	Page          int32                  `protobuf:"varint,2,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize      int32                  `protobuf:"varint,3,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetFollowingReq) Reset() {
+	*x = GetFollowingReq{}
+	mi := &file_user_user_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetFollowingReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetFollowingReq) ProtoMessage() {}
+
+func (x *GetFollowingReq) ProtoReflect() protoreflect.Message {
+	mi := &file_user_user_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetFollowingReq.ProtoReflect.Descriptor instead.
+func (*GetFollowingReq) Descriptor() ([]byte, []int) {
+	return file_user_user_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *GetFollowingReq) GetUserId() int64 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
+}
+
+func (x *GetFollowingReq) GetPage() int32 {
+	if x != nil {
+		return x.Page
+	}
+	return 0
+}
+
+func (x *GetFollowingReq) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+type GetFollowingResp struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Users         []*FollowUserInfo      `protobuf:"bytes,1,rep,name=users,proto3" json:"users,omitempty"`
+	Total         int64                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetFollowingResp) Reset() {
+	*x = GetFollowingResp{}
+	mi := &file_user_user_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetFollowingResp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetFollowingResp) ProtoMessage() {}
+
+func (x *GetFollowingResp) ProtoReflect() protoreflect.Message {
+	mi := &file_user_user_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetFollowingResp.ProtoReflect.Descriptor instead.
+func (*GetFollowingResp) Descriptor() ([]byte, []int) {
+	return file_user_user_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *GetFollowingResp) GetUsers() []*FollowUserInfo {
+	if x != nil {
+		return x.Users
+	}
+	return nil
+}
+
+func (x *GetFollowingResp) GetTotal() int64 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
+type IsFollowingReq struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        int64                  `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`       // 当前用户
+	TargetId      int64                  `protobuf:"varint,2,opt,name=target_id,json=targetId,proto3" json:"target_id,omitempty"` // 目标用户
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *IsFollowingReq) Reset() {
+	*x = IsFollowingReq{}
+	mi := &file_user_user_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *IsFollowingReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*IsFollowingReq) ProtoMessage() {}
+
+func (x *IsFollowingReq) ProtoReflect() protoreflect.Message {
+	mi := &file_user_user_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use IsFollowingReq.ProtoReflect.Descriptor instead.
+func (*IsFollowingReq) Descriptor() ([]byte, []int) {
+	return file_user_user_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *IsFollowingReq) GetUserId() int64 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
+}
+
+func (x *IsFollowingReq) GetTargetId() int64 {
+	if x != nil {
+		return x.TargetId
+	}
+	return 0
+}
+
+type IsFollowingResp struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Following     bool                   `protobuf:"varint,1,opt,name=following,proto3" json:"following,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *IsFollowingResp) Reset() {
+	*x = IsFollowingResp{}
+	mi := &file_user_user_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *IsFollowingResp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*IsFollowingResp) ProtoMessage() {}
+
+func (x *IsFollowingResp) ProtoReflect() protoreflect.Message {
+	mi := &file_user_user_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use IsFollowingResp.ProtoReflect.Descriptor instead.
+func (*IsFollowingResp) Descriptor() ([]byte, []int) {
+	return file_user_user_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *IsFollowingResp) GetFollowing() bool {
+	if x != nil {
+		return x.Following
+	}
+	return false
+}
+
 var File_user_user_proto protoreflect.FileDescriptor
 
 const file_user_user_proto_rawDesc = "" +
@@ -162,9 +748,53 @@ const file_user_user_proto_rawDesc = "" +
 	"\x03bio\x18\x03 \x01(\tR\x03bio\x12\x16\n" +
 	"\x06avatar\x18\x04 \x01(\tR\x06avatar\x12\x1d\n" +
 	"\n" +
-	"created_at\x18\x05 \x01(\x03R\tcreatedAt2>\n" +
+	"created_at\x18\x05 \x01(\x03R\tcreatedAt\"k\n" +
+	"\tFollowReq\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\x03R\x06userId\x12\x1f\n" +
+	"\vfollowee_id\x18\x02 \x01(\x03R\n" +
+	"followeeId\x12$\n" +
+	"\x0esource_note_id\x18\x03 \x01(\x03R\fsourceNoteId\"\x1c\n" +
+	"\n" +
+	"FollowResp\x12\x0e\n" +
+	"\x02ok\x18\x01 \x01(\bR\x02ok\"G\n" +
+	"\vUnfollowReq\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\x03R\x06userId\x12\x1f\n" +
+	"\vfollowee_id\x18\x02 \x01(\x03R\n" +
+	"followeeId\"\x1e\n" +
+	"\fUnfollowResp\x12\x0e\n" +
+	"\x02ok\x18\x01 \x01(\bR\x02ok\"[\n" +
+	"\x0fGetFollowersReq\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\x03R\x06userId\x12\x12\n" +
+	"\x04page\x18\x02 \x01(\x05R\x04page\x12\x1b\n" +
+	"\tpage_size\x18\x03 \x01(\x05R\bpageSize\"u\n" +
+	"\x0eFollowUserInfo\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\x03R\x02id\x12\x1a\n" +
+	"\busername\x18\x02 \x01(\tR\busername\x12\x16\n" +
+	"\x06avatar\x18\x03 \x01(\tR\x06avatar\x12\x1f\n" +
+	"\vfollowed_at\x18\x04 \x01(\x03R\n" +
+	"followedAt\"T\n" +
+	"\x10GetFollowersResp\x12*\n" +
+	"\x05users\x18\x01 \x03(\v2\x14.user.FollowUserInfoR\x05users\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\x03R\x05total\"[\n" +
+	"\x0fGetFollowingReq\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\x03R\x06userId\x12\x12\n" +
+	"\x04page\x18\x02 \x01(\x05R\x04page\x12\x1b\n" +
+	"\tpage_size\x18\x03 \x01(\x05R\bpageSize\"T\n" +
+	"\x10GetFollowingResp\x12*\n" +
+	"\x05users\x18\x01 \x03(\v2\x14.user.FollowUserInfoR\x05users\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\x03R\x05total\"F\n" +
+	"\x0eIsFollowingReq\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\x03R\x06userId\x12\x1b\n" +
+	"\ttarget_id\x18\x02 \x01(\x03R\btargetId\"/\n" +
+	"\x0fIsFollowingResp\x12\x1c\n" +
+	"\tfollowing\x18\x01 \x01(\bR\tfollowing2\xd8\x02\n" +
 	"\vUserService\x12/\n" +
-	"\aGetUser\x12\x10.user.GetUserReq\x1a\x12.user.UserResponseB\x1dZ\x1bxys-clone/proto/user;userpbb\x06proto3"
+	"\aGetUser\x12\x10.user.GetUserReq\x1a\x12.user.UserResponse\x12+\n" +
+	"\x06Follow\x12\x0f.user.FollowReq\x1a\x10.user.FollowResp\x121\n" +
+	"\bUnfollow\x12\x11.user.UnfollowReq\x1a\x12.user.UnfollowResp\x12=\n" +
+	"\fGetFollowers\x12\x15.user.GetFollowersReq\x1a\x16.user.GetFollowersResp\x12=\n" +
+	"\fGetFollowing\x12\x15.user.GetFollowingReq\x1a\x16.user.GetFollowingResp\x12:\n" +
+	"\vIsFollowing\x12\x14.user.IsFollowingReq\x1a\x15.user.IsFollowingRespB\x1dZ\x1bxys-clone/proto/user;userpbb\x06proto3"
 
 var (
 	file_user_user_proto_rawDescOnce sync.Once
@@ -178,19 +808,42 @@ func file_user_user_proto_rawDescGZIP() []byte {
 	return file_user_user_proto_rawDescData
 }
 
-var file_user_user_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_user_user_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_user_user_proto_goTypes = []any{
-	(*GetUserReq)(nil),   // 0: user.GetUserReq
-	(*UserResponse)(nil), // 1: user.UserResponse
+	(*GetUserReq)(nil),       // 0: user.GetUserReq
+	(*UserResponse)(nil),     // 1: user.UserResponse
+	(*FollowReq)(nil),        // 2: user.FollowReq
+	(*FollowResp)(nil),       // 3: user.FollowResp
+	(*UnfollowReq)(nil),      // 4: user.UnfollowReq
+	(*UnfollowResp)(nil),     // 5: user.UnfollowResp
+	(*GetFollowersReq)(nil),  // 6: user.GetFollowersReq
+	(*FollowUserInfo)(nil),   // 7: user.FollowUserInfo
+	(*GetFollowersResp)(nil), // 8: user.GetFollowersResp
+	(*GetFollowingReq)(nil),  // 9: user.GetFollowingReq
+	(*GetFollowingResp)(nil), // 10: user.GetFollowingResp
+	(*IsFollowingReq)(nil),   // 11: user.IsFollowingReq
+	(*IsFollowingResp)(nil),  // 12: user.IsFollowingResp
 }
 var file_user_user_proto_depIdxs = []int32{
-	0, // 0: user.UserService.GetUser:input_type -> user.GetUserReq
-	1, // 1: user.UserService.GetUser:output_type -> user.UserResponse
-	1, // [1:2] is the sub-list for method output_type
-	0, // [0:1] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	7,  // 0: user.GetFollowersResp.users:type_name -> user.FollowUserInfo
+	7,  // 1: user.GetFollowingResp.users:type_name -> user.FollowUserInfo
+	0,  // 2: user.UserService.GetUser:input_type -> user.GetUserReq
+	2,  // 3: user.UserService.Follow:input_type -> user.FollowReq
+	4,  // 4: user.UserService.Unfollow:input_type -> user.UnfollowReq
+	6,  // 5: user.UserService.GetFollowers:input_type -> user.GetFollowersReq
+	9,  // 6: user.UserService.GetFollowing:input_type -> user.GetFollowingReq
+	11, // 7: user.UserService.IsFollowing:input_type -> user.IsFollowingReq
+	1,  // 8: user.UserService.GetUser:output_type -> user.UserResponse
+	3,  // 9: user.UserService.Follow:output_type -> user.FollowResp
+	5,  // 10: user.UserService.Unfollow:output_type -> user.UnfollowResp
+	8,  // 11: user.UserService.GetFollowers:output_type -> user.GetFollowersResp
+	10, // 12: user.UserService.GetFollowing:output_type -> user.GetFollowingResp
+	12, // 13: user.UserService.IsFollowing:output_type -> user.IsFollowingResp
+	8,  // [8:14] is the sub-list for method output_type
+	2,  // [2:8] is the sub-list for method input_type
+	2,  // [2:2] is the sub-list for extension type_name
+	2,  // [2:2] is the sub-list for extension extendee
+	0,  // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_user_user_proto_init() }
@@ -204,7 +857,7 @@ func file_user_user_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_user_user_proto_rawDesc), len(file_user_user_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

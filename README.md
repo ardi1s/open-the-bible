@@ -31,9 +31,9 @@
 
 - Go 1.25+
 - protoc（Protocol Buffers 编译器）
-- Docker & Docker Compose
-- MySQL 8.0（Docker Compose 内置）
-- RabbitMQ 3.13（Docker Compose 内置）
+- Docker & Docker Compose（可选）
+- MySQL 8.0（brew install mysql）
+- RabbitMQ（brew install rabbitmq）
 
 ## 快速开始
 

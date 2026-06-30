@@ -13,20 +13,88 @@ option go_package = "xys-clone/proto/user;userpb";
 service UserService {
   // 根据 user_id 查询单个用户信息
   rpc GetUser(GetUserReq) returns (UserResponse);
+
+  // ── 关注 ──
+  rpc Follow(FollowReq) returns (FollowResp);
+  rpc Unfollow(UnfollowReq) returns (UnfollowResp);
+  rpc GetFollowers(GetFollowersReq) returns (GetFollowersResp);
+  rpc GetFollowing(GetFollowingReq) returns (GetFollowingResp);
+  rpc IsFollowing(IsFollowingReq) returns (IsFollowingResp);
 }
 
-// ──────────── 消息定义 ────────────
+// ──────────── 查询用户 ────────────
 
-// 查询用户请求
 message GetUserReq {
   int64 user_id = 1;
 }
 
-// 用户信息响应
 message UserResponse {
   int64 id         = 1;  // 用户 ID
   string username  = 2;  // 用户名
   string bio       = 3;  // 个人简介
   string avatar    = 4;  // 头像 URL
   int64 created_at = 5;  // 注册时间（Unix 时间戳）
+}
+
+// ──────────── 关注 / 取关 ────────────
+
+message FollowReq {
+  int64 user_id        = 1;  // 操作者（关注方）
+  int64 followee_id    = 2;  // 被关注方
+  int64 source_note_id = 3;  // 从哪篇笔记关注的（可选，默认 0）
+}
+
+message FollowResp {
+  bool ok = 1;
+}
+
+message UnfollowReq {
+  int64 user_id     = 1;  // 操作者（取关方）
+  int64 followee_id = 2;  // 被取关方
+}
+
+message UnfollowResp {
+  bool ok = 1;
+}
+
+// ──────────── 粉丝 / 关注列表 ────────────
+
+message GetFollowersReq {
+  int64  user_id   = 1;
+  int32  page      = 2;  // 页码，从 1 开始
+  int32  page_size = 3;  // 每页条数，默认 20
+}
+
+message FollowUserInfo {
+  int64  id        = 1;
+  string username  = 2;
+  string avatar    = 3;
+  int64  followed_at = 4;   // 关注时间（Unix 时间戳）
+}
+
+message GetFollowersResp {
+  repeated FollowUserInfo users     = 1;
+  int64                    total    = 2;  // 总数
+}
+
+message GetFollowingReq {
+  int64  user_id   = 1;
+  int32  page      = 2;
+  int32  page_size = 3;
+}
+
+message GetFollowingResp {
+  repeated FollowUserInfo users = 1;
+  int64                    total = 2;
+}
+
+// ──────────── 关注状态查询 ────────────
+
+message IsFollowingReq {
+  int64 user_id   = 1;  // 当前用户
+  int64 target_id = 2;  // 目标用户
+}
+
+message IsFollowingResp {
+  bool following = 1;
 }

@@ -1,8 +1,5 @@
 // API 网关（Gateway）入口。
 // 基于 Gin 框架提供 HTTP RESTful 接口，内部通过 gRPC 调用下游微服务。
-// 启动方式：
-//   - 本地开发：make run-gateway（需先启动 user + note 服务）
-//   - Docker：docker-compose up -d
 package main
 
 import (
@@ -22,8 +19,6 @@ import (
 )
 
 func main() {
-	// ── gRPC 客户端 ──
-
 	userConn := mustDial("USER_SERVICE_ADDR", "localhost:50051")
 	defer userConn.Close()
 	userClient := userpb.NewUserServiceClient(userConn)
@@ -32,22 +27,20 @@ func main() {
 	defer noteConn.Close()
 	noteClient := notepb.NewNoteServiceClient(noteConn)
 
-	// 初始化 Gin 引擎
 	r := gin.Default()
 
-	// ──────────── 路由注册 ────────────
+	// ──────────── 基础 ────────────
 
-	// GET /health —— 健康检查
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
 
-	// GET /api/user/:id —— 查询用户信息
+	// ──────────── 用户 ────────────
+
 	r.GET("/api/user/:id", func(c *gin.Context) {
 		idStr := c.Param("id")
 		userID, err := strconv.ParseInt(idStr, 10, 64)
 		if err != nil {
-			log.Printf("[warn] 非法 user_id: %q", idStr)
 			c.JSON(http.StatusBadRequest, gin.H{"code": 400, "error": "user_id 必须为整数"})
 			return
 		}
@@ -57,27 +50,147 @@ func main() {
 
 		resp, err := userClient.GetUser(ctx, &userpb.GetUserReq{UserId: userID})
 		if err != nil {
-			log.Printf("[error] GetUser(%d) 调用失败: %v", userID, err)
-			c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "error": "查询用户失败，请稍后重试"})
+			log.Printf("[error] GetUser(%d) 失败: %v", userID, err)
+			c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "error": "查询用户失败"})
 			return
 		}
-
-		log.Printf("[info] GetUser(%d) 成功 => username=%s", userID, resp.Username)
 
 		c.JSON(http.StatusOK, gin.H{
 			"code": 0,
 			"data": gin.H{
-				"id":         resp.Id,
-				"username":   resp.Username,
-				"bio":        resp.Bio,
-				"avatar":     resp.Avatar,
-				"created_at": resp.CreatedAt,
+				"id": resp.Id, "username": resp.Username, "bio": resp.Bio,
+				"avatar": resp.Avatar, "created_at": resp.CreatedAt,
 			},
 		})
 	})
 
-	// POST /api/notes —— 创建笔记
-	// 请求体 JSON：{"user_id":1, "title":"...", "content":"...", "image_urls":[...], "tags":[...]}
+	// ── 关注 ──
+
+	// POST /api/user/:id/follow  —  当前用户关注 :id
+	r.POST("/api/user/:id/follow", func(c *gin.Context) {
+		followeeID := mustParseInt(c.Param("id"))
+
+		var body struct {
+			UserID       int64 `json:"user_id"       binding:"required"`
+			SourceNoteID int64 `json:"source_note_id"`
+		}
+		if err := c.ShouldBindJSON(&body); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"code": 400, "error": "user_id 为必填"})
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+		defer cancel()
+
+		resp, err := userClient.Follow(ctx, &userpb.FollowReq{
+			UserId: body.UserID, FolloweeId: followeeID, SourceNoteId: body.SourceNoteID,
+		})
+		if err != nil {
+			log.Printf("[error] Follow(%d→%d) 失败: %v", body.UserID, followeeID, err)
+			c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "error": err.Error()})
+			return
+		}
+
+		log.Printf("[info] Follow ok: %d → %d", body.UserID, followeeID)
+		c.JSON(http.StatusOK, gin.H{"code": 0, "data": gin.H{"ok": resp.Ok}})
+	})
+
+	// DELETE /api/user/:id/follow  —  当前用户取关 :id
+	r.DELETE("/api/user/:id/follow", func(c *gin.Context) {
+		followeeID := mustParseInt(c.Param("id"))
+
+		var body struct {
+			UserID int64 `json:"user_id" binding:"required"`
+		}
+		if err := c.ShouldBindJSON(&body); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"code": 400, "error": "user_id 为必填"})
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+		defer cancel()
+
+		resp, err := userClient.Unfollow(ctx, &userpb.UnfollowReq{
+			UserId: body.UserID, FolloweeId: followeeID,
+		})
+		if err != nil {
+			log.Printf("[error] Unfollow(%d→%d) 失败: %v", body.UserID, followeeID, err)
+			c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "error": err.Error()})
+			return
+		}
+
+		log.Printf("[info] Unfollow ok: %d → %d", body.UserID, followeeID)
+		c.JSON(http.StatusOK, gin.H{"code": 0, "data": gin.H{"ok": resp.Ok}})
+	})
+
+	// GET /api/user/:id/followers?page=1&size=20  —  查看 :id 的粉丝
+	r.GET("/api/user/:id/followers", func(c *gin.Context) {
+		userID := mustParseInt(c.Param("id"))
+		page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+		size, _ := strconv.Atoi(c.DefaultQuery("size", "20"))
+
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+		defer cancel()
+
+		resp, err := userClient.GetFollowers(ctx, &userpb.GetFollowersReq{
+			UserId: userID, Page: int32(page), PageSize: int32(size),
+		})
+		if err != nil {
+			log.Printf("[error] GetFollowers(%d) 失败: %v", userID, err)
+			c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"code": 0, "data": gin.H{
+			"users": resp.Users, "total": resp.Total,
+		}})
+	})
+
+	// GET /api/user/:id/following?page=1&size=20  —  查看 :id 关注的人
+	r.GET("/api/user/:id/following", func(c *gin.Context) {
+		userID := mustParseInt(c.Param("id"))
+		page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+		size, _ := strconv.Atoi(c.DefaultQuery("size", "20"))
+
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+		defer cancel()
+
+		resp, err := userClient.GetFollowing(ctx, &userpb.GetFollowingReq{
+			UserId: userID, Page: int32(page), PageSize: int32(size),
+		})
+		if err != nil {
+			log.Printf("[error] GetFollowing(%d) 失败: %v", userID, err)
+			c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"code": 0, "data": gin.H{
+			"users": resp.Users, "total": resp.Total,
+		}})
+	})
+
+	// GET /api/user/:id/is-following?target_id=2  —  检查关注状态
+	r.GET("/api/user/:id/is-following", func(c *gin.Context) {
+		userID := mustParseInt(c.Param("id"))
+		targetID := mustParseInt(c.Query("target_id"))
+
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+		defer cancel()
+
+		resp, err := userClient.IsFollowing(ctx, &userpb.IsFollowingReq{
+			UserId: userID, TargetId: targetID,
+		})
+		if err != nil {
+			log.Printf("[error] IsFollowing(%d→%d) 失败: %v", userID, targetID, err)
+			c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "error": err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"code": 0, "data": gin.H{"following": resp.Following}})
+	})
+
+	// ──────────── 笔记 ────────────
+
 	r.POST("/api/notes", func(c *gin.Context) {
 		var req struct {
 			UserID    int64    `json:"user_id"    binding:"required"`
@@ -88,8 +201,7 @@ func main() {
 		}
 
 		if err := c.ShouldBindJSON(&req); err != nil {
-			log.Printf("[warn] 创建笔记参数不合法: %v", err)
-			c.JSON(http.StatusBadRequest, gin.H{"code": 400, "error": "参数不合法，user_id/title/content 为必填"})
+			c.JSON(http.StatusBadRequest, gin.H{"code": 400, "error": "参数不合法"})
 			return
 		}
 
@@ -97,24 +209,17 @@ func main() {
 		defer cancel()
 
 		resp, err := noteClient.CreateNote(ctx, &notepb.CreateNoteReq{
-			UserId:    req.UserID,
-			Title:     req.Title,
-			Content:   req.Content,
-			ImageUrls: req.ImageURLs,
-			Tags:      req.Tags,
+			UserId: req.UserID, Title: req.Title, Content: req.Content,
+			ImageUrls: req.ImageURLs, Tags: req.Tags,
 		})
 		if err != nil {
-			log.Printf("[error] CreateNote 调用失败: %v", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "error": "创建笔记失败，请稍后重试"})
+			log.Printf("[error] CreateNote 失败: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "error": "创建笔记失败"})
 			return
 		}
 
-		log.Printf("[info] 笔记创建成功 note_id=%d user_id=%d", resp.NoteId, req.UserID)
-
-		c.JSON(http.StatusOK, gin.H{
-			"code": 0,
-			"data": gin.H{"note_id": resp.NoteId},
-		})
+		log.Printf("[info] 笔记创建成功 note_id=%d", resp.NoteId)
+		c.JSON(http.StatusOK, gin.H{"code": 0, "data": gin.H{"note_id": resp.NoteId}})
 	})
 
 	log.Println("Gateway 已启动，监听 :8080")
@@ -123,7 +228,8 @@ func main() {
 	}
 }
 
-// mustDial 从环境变量读取地址，创建 gRPC 连接，失败直接 fatal。
+// ──────────── helpers ────────────
+
 func mustDial(envKey, defaultAddr string) *grpc.ClientConn {
 	addr := os.Getenv(envKey)
 	if addr == "" {
@@ -134,4 +240,9 @@ func mustDial(envKey, defaultAddr string) *grpc.ClientConn {
 		log.Fatalf("连接 %s 失败 (%s): %v", envKey, addr, err)
 	}
 	return conn
+}
+
+func mustParseInt(s string) int64 {
+	v, _ := strconv.ParseInt(s, 10, 64)
+	return v
 }
