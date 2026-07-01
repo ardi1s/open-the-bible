@@ -14,6 +14,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
+	feedpb "xys-clone/proto/feed"
 	notepb "xys-clone/proto/note"
 	userpb "xys-clone/proto/user"
 )
@@ -26,6 +27,10 @@ func main() {
 	noteConn := mustDial("NOTE_SERVICE_ADDR", "localhost:50052")
 	defer noteConn.Close()
 	noteClient := notepb.NewNoteServiceClient(noteConn)
+
+	feedConn := mustDial("FEED_SERVICE_ADDR", "localhost:50053")
+	defer feedConn.Close()
+	feedClient := feedpb.NewFeedServiceClient(feedConn)
 
 	r := gin.Default()
 
@@ -187,6 +192,32 @@ func main() {
 		}
 
 		c.JSON(http.StatusOK, gin.H{"code": 0, "data": gin.H{"following": resp.Following}})
+	})
+
+	// ──────────── Feed ────────────
+
+	// GET /api/feed?user_id=1&page=1&size=10  —  获取用户信息流
+	r.GET("/api/feed", func(c *gin.Context) {
+		userID := mustParseInt(c.Query("user_id"))
+		page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+		size, _ := strconv.Atoi(c.DefaultQuery("size", "10"))
+
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+		defer cancel()
+
+		resp, err := feedClient.GetUserFeed(ctx, &feedpb.GetUserFeedReq{
+			UserId: userID, Page: int32(page), PageSize: int32(size),
+		})
+		if err != nil {
+			log.Printf("[error] GetUserFeed(%d) 失败: %v", userID, err)
+			c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "error": "获取信息流失败"})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"code": 0,
+			"data": gin.H{"items": resp.Items, "total": resp.Total},
+		})
 	})
 
 	// ──────────── 笔记 ────────────

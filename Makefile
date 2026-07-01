@@ -1,10 +1,10 @@
 .PHONY: proto proto-user proto-note proto-clean \
-        run-user run-gateway run-note \
-        build-user build-gateway build-note build-all \
+        run-user run-gateway run-note run-feed \
+        build-user build-gateway build-note build-feed build-all \
         test test-cover lint ci-check \
         docker-build docker-build-all docker-push docker-push-all \
         docker-up docker-down \
-        docker-build-user docker-build-gateway docker-build-note
+        docker-build-user docker-build-gateway docker-build-note docker-build-feed
 
 # 自动探测 GOPATH，确保 protoc 插件在 PATH 中
 GOPATH    := $(shell go env GOPATH)
@@ -17,7 +17,7 @@ OUT_DIR   := proto
 # ★ 服务清单 —— 新增服务只需在此加一行
 #   CI/CD 工作流中的 SERVICES 对应更新
 # ============================================================
-SERVICES  := user gateway note
+SERVICES  := user gateway note feed
 
 REGISTRY  ?= docker.io
 DOCKER_USERNAME ?=
@@ -34,7 +34,7 @@ install-tools:
 # ============================================================
 # Proto 桩代码
 # ============================================================
-proto: proto-user proto-note
+proto: proto-user proto-note proto-feed
 
 proto-user:
 	protoc \
@@ -54,9 +54,19 @@ proto-note:
 		--go-grpc_opt=paths=source_relative \
 		$(PROTO_DIR)/note/note.proto
 
+proto-feed:
+	protoc \
+		--proto_path=$(PROTO_DIR) \
+		--go_out=$(OUT_DIR) \
+		--go_opt=paths=source_relative \
+		--go-grpc_out=$(OUT_DIR) \
+		--go-grpc_opt=paths=source_relative \
+		$(PROTO_DIR)/feed/feed.proto
+
 proto-clean:
 	rm -f $(PROTO_DIR)/user/*.pb.go
 	rm -f $(PROTO_DIR)/note/*.pb.go
+	rm -f $(PROTO_DIR)/feed/*.pb.go
 
 # ============================================================
 # 运行
@@ -70,6 +80,9 @@ run-gateway:
 run-note:
 	go run ./cmd/note/main.go
 
+run-feed:
+	go run ./cmd/feed/main.go
+
 # ============================================================
 # 编译
 # ============================================================
@@ -81,6 +94,9 @@ build-gateway:
 
 build-note:
 	go build -o bin/note ./cmd/note
+
+build-feed:
+	go build -o bin/feed ./cmd/feed
 
 build-all:
 	@for svc in $(SERVICES); do \

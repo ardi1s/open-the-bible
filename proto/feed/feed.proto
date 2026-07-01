@@ -1,0 +1,43 @@
+// proto/feed/feed.proto
+// Feed 服务 Protobuf 定义。
+// 提供用户信息流接口（推拉结合）。
+// 生成 Go 桩代码：make proto
+
+syntax = "proto3";
+
+package feed;
+
+option go_package = "xys-clone/proto/feed;feedpb";
+
+// ──────────── Feed 服务 ────────────
+service FeedService {
+  // 获取用户信息流（推模式优先，Redis 不足时回退拉模式）
+  rpc GetUserFeed(GetUserFeedReq) returns (GetUserFeedResp);
+}
+
+// ──────────── 查询请求 ────────────
+
+message GetUserFeedReq {
+  int64 user_id   = 1;
+  int32 page      = 2;  // 页码，从 1 开始
+  int32 page_size = 3;  // 每页条数，默认 10
+}
+
+message GetUserFeedResp {
+  repeated FeedItem items = 1;
+  int64             total = 2;  // 总数（-1 表示不精确）
+}
+
+// ──────────── Feed 条目 ────────────
+
+message FeedItem {
+  int64  note_id    = 1;
+  int64  author_id  = 2;
+  string author_name = 3;
+  string author_avatar = 4;
+  string title      = 5;
+  string content    = 6;
+  repeated string image_urls = 7;
+  repeated string tags       = 8;
+  int64  created_at = 9;   // 笔记创建时间
+}

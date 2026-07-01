@@ -1,11 +1,16 @@
 # ──────────────────────────────────────────────
 # Docker Compose（仅本地没有的基础设施）
-#   MySQL → 本机 Homebrew 安装的，不需要容器
-#   RabbitMQ → 本机 Homebrew 安装的，不需要容器
+#   Redis → 本机如果没有可通过 docker-compose 启动
+#   MySQL / RabbitMQ → 本机 Homebrew 安装的，不需要容器
 #   微服务 → 本地 go run，不需要容器
 #
-#   目前 docker-compose 为空，仅作为模板保留。
-#   后续上线到 K8s 时再补充。
+#   用法：docker-compose up -d redis
 # ──────────────────────────────────────────────
 services:
-  # 暂无
+  # ── Redis（本机没有时可用容器跑）──
+  redis:
+    image: redis:7-alpine
+    container_name: xys-redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
