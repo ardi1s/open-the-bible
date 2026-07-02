@@ -15,6 +15,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 
 	feedpb "xys-clone/proto/feed"
+	interactionpb "xys-clone/proto/interaction"
 	notepb "xys-clone/proto/note"
 	userpb "xys-clone/proto/user"
 )
@@ -31,6 +32,10 @@ func main() {
 	feedConn := mustDial("FEED_SERVICE_ADDR", "localhost:50053")
 	defer feedConn.Close()
 	feedClient := feedpb.NewFeedServiceClient(feedConn)
+
+	interactionConn := mustDial("INTERACTION_SERVICE_ADDR", "localhost:50054")
+	defer interactionConn.Close()
+	interactionClient := interactionpb.NewInteractionServiceClient(interactionConn)
 
 	r := gin.Default()
 
@@ -218,6 +223,164 @@ func main() {
 			"code": 0,
 			"data": gin.H{"items": resp.Items, "total": resp.Total},
 		})
+	})
+
+	// ──────────── 互动 ────────────
+
+	// POST /api/notes/:id/like  —  点赞
+	r.POST("/api/notes/:id/like", func(c *gin.Context) {
+		noteID := mustParseInt(c.Param("id"))
+		var body struct {
+			UserID int64 `json:"user_id" binding:"required"`
+		}
+		if err := c.ShouldBindJSON(&body); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"code": 400, "error": "user_id 为必填"})
+			return
+		}
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+		defer cancel()
+		resp, err := interactionClient.LikeNote(ctx, &interactionpb.LikeNoteReq{UserId: body.UserID, NoteId: noteID})
+		if err != nil {
+			log.Printf("[error] LikeNote(%d) 失败: %v", noteID, err)
+			c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"code": 0, "data": gin.H{"ok": resp.Ok}})
+	})
+
+	// DELETE /api/notes/:id/like  —  取消点赞
+	r.DELETE("/api/notes/:id/like", func(c *gin.Context) {
+		noteID := mustParseInt(c.Param("id"))
+		var body struct {
+			UserID int64 `json:"user_id" binding:"required"`
+		}
+		if err := c.ShouldBindJSON(&body); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"code": 400, "error": "user_id 为必填"})
+			return
+		}
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+		defer cancel()
+		resp, err := interactionClient.UnlikeNote(ctx, &interactionpb.UnlikeNoteReq{UserId: body.UserID, NoteId: noteID})
+		if err != nil {
+			log.Printf("[error] UnlikeNote(%d) 失败: %v", noteID, err)
+			c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"code": 0, "data": gin.H{"ok": resp.Ok}})
+	})
+
+	// POST /api/notes/:id/collect  —  收藏
+	r.POST("/api/notes/:id/collect", func(c *gin.Context) {
+		noteID := mustParseInt(c.Param("id"))
+		var body struct {
+			UserID int64 `json:"user_id" binding:"required"`
+		}
+		if err := c.ShouldBindJSON(&body); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"code": 400, "error": "user_id 为必填"})
+			return
+		}
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+		defer cancel()
+		resp, err := interactionClient.CollectNote(ctx, &interactionpb.CollectNoteReq{UserId: body.UserID, NoteId: noteID})
+		if err != nil {
+			log.Printf("[error] CollectNote(%d) 失败: %v", noteID, err)
+			c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"code": 0, "data": gin.H{"ok": resp.Ok}})
+	})
+
+	// DELETE /api/notes/:id/collect  —  取消收藏
+	r.DELETE("/api/notes/:id/collect", func(c *gin.Context) {
+		noteID := mustParseInt(c.Param("id"))
+		var body struct {
+			UserID int64 `json:"user_id" binding:"required"`
+		}
+		if err := c.ShouldBindJSON(&body); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"code": 400, "error": "user_id 为必填"})
+			return
+		}
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+		defer cancel()
+		resp, err := interactionClient.UncollectNote(ctx, &interactionpb.UncollectNoteReq{UserId: body.UserID, NoteId: noteID})
+		if err != nil {
+			log.Printf("[error] UncollectNote(%d) 失败: %v", noteID, err)
+			c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"code": 0, "data": gin.H{"ok": resp.Ok}})
+	})
+
+	// POST /api/notes/:id/comment  —  评论
+	r.POST("/api/notes/:id/comment", func(c *gin.Context) {
+		noteID := mustParseInt(c.Param("id"))
+		var body struct {
+			UserID   int64  `json:"user_id"   binding:"required"`
+			Content  string `json:"content"   binding:"required"`
+			ParentID int64  `json:"parent_id"`
+		}
+		if err := c.ShouldBindJSON(&body); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"code": 400, "error": "user_id 和 content 为必填"})
+			return
+		}
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+		defer cancel()
+		resp, err := interactionClient.CommentOnNote(ctx, &interactionpb.CommentOnNoteReq{
+			UserId: body.UserID, NoteId: noteID, Content: body.Content, ParentId: body.ParentID,
+		})
+		if err != nil {
+			log.Printf("[error] CommentOnNote(%d) 失败: %v", noteID, err)
+			c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"code": 0, "data": gin.H{"comment_id": resp.CommentId}})
+	})
+
+	// DELETE /api/comments/:id  —  删除评论
+	r.DELETE("/api/comments/:id", func(c *gin.Context) {
+		commentID := mustParseInt(c.Param("id"))
+		var body struct {
+			UserID int64 `json:"user_id" binding:"required"`
+		}
+		if err := c.ShouldBindJSON(&body); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"code": 400, "error": "user_id 为必填"})
+			return
+		}
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+		defer cancel()
+		resp, err := interactionClient.DeleteComment(ctx, &interactionpb.DeleteCommentReq{
+			CommentId: commentID, UserId: body.UserID,
+		})
+		if err != nil {
+			log.Printf("[error] DeleteComment(%d) 失败: %v", commentID, err)
+			c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"code": 0, "data": gin.H{"ok": resp.Ok}})
+	})
+
+	// GET /api/notes/:id/interactions?user_id=1  —  互动汇总
+	r.GET("/api/notes/:id/interactions", func(c *gin.Context) {
+		noteID := mustParseInt(c.Param("id"))
+		userID := mustParseInt(c.Query("user_id"))
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+		defer cancel()
+		resp, err := interactionClient.GetNoteInteractions(ctx, &interactionpb.GetNoteInteractionsReq{
+			NoteId: noteID, UserId: userID,
+		})
+		if err != nil {
+			log.Printf("[error] GetNoteInteractions(%d) 失败: %v", noteID, err)
+			c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"code": 0, "data": gin.H{
+			"like_count":    resp.LikeCount,
+			"collect_count": resp.CollectCount,
+			"comment_count": resp.CommentCount,
+			"is_liked":      resp.IsLiked,
+			"is_collected":  resp.IsCollected,
+			"comments":      resp.Comments,
+		}})
 	})
 
 	// ──────────── 笔记 ────────────

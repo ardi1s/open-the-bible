@@ -1,0 +1,109 @@
+// proto/interaction/interaction.proto
+// 互动服务 Protobuf 定义。
+// 定义点赞、收藏、评论及互动汇总查询接口。
+// 生成 Go 桩代码：make proto
+
+syntax = "proto3";
+
+package interaction;
+
+option go_package = "xys-clone/proto/interaction;interactionpb";
+
+// ──────────── 互动服务 ────────────
+service InteractionService {
+  rpc LikeNote(LikeNoteReq)             returns (LikeNoteResp);
+  rpc UnlikeNote(UnlikeNoteReq)         returns (UnlikeNoteResp);
+  rpc CollectNote(CollectNoteReq)       returns (CollectNoteResp);
+  rpc UncollectNote(UncollectNoteReq)   returns (UncollectNoteResp);
+  rpc CommentOnNote(CommentOnNoteReq)   returns (CommentOnNoteResp);
+  rpc DeleteComment(DeleteCommentReq)   returns (DeleteCommentResp);
+  rpc GetNoteInteractions(GetNoteInteractionsReq) returns (GetNoteInteractionsResp);
+}
+
+// ──────────── 点赞 ────────────
+
+message LikeNoteReq {
+  int64 user_id = 1;
+  int64 note_id = 2;
+}
+
+message LikeNoteResp {
+  bool ok = 1;
+}
+
+message UnlikeNoteReq {
+  int64 user_id = 1;
+  int64 note_id = 2;
+}
+
+message UnlikeNoteResp {
+  bool ok = 1;
+}
+
+// ──────────── 收藏 ────────────
+
+message CollectNoteReq {
+  int64 user_id = 1;
+  int64 note_id = 2;
+}
+
+message CollectNoteResp {
+  bool ok = 1;
+}
+
+message UncollectNoteReq {
+  int64 user_id = 1;
+  int64 note_id = 2;
+}
+
+message UncollectNoteResp {
+  bool ok = 1;
+}
+
+// ──────────── 评论 ────────────
+
+message CommentOnNoteReq {
+  int64  user_id   = 1;
+  int64  note_id   = 2;
+  string content   = 3;
+  int64  parent_id = 4;  // 回复某条评论，顶层为 0
+}
+
+message CommentOnNoteResp {
+  int64 comment_id = 1;
+}
+
+message DeleteCommentReq {
+  int64 comment_id = 1;
+  int64 user_id    = 2;
+}
+
+message DeleteCommentResp {
+  bool ok = 1;
+}
+
+// ──────────── 互动汇总查询 ────────────
+
+message GetNoteInteractionsReq {
+  int64 note_id  = 1;
+  int64 user_id  = 2;  // 当前用户（用于判断是否已点赞/收藏）
+}
+
+message CommentItem {
+  int64  id        = 1;
+  int64  user_id   = 2;
+  string username  = 3;
+  string avatar    = 4;
+  string content   = 5;
+  int64  parent_id = 6;
+  int64  created_at = 7;
+}
+
+message GetNoteInteractionsResp {
+  int64                like_count      = 1;
+  int64                collect_count   = 2;
+  int64                comment_count   = 3;
+  bool                 is_liked        = 4;  // 当前用户是否已点赞
+  bool                 is_collected    = 5;  // 当前用户是否已收藏
+  repeated CommentItem comments        = 6;  // 评论列表（默认最新 10 条）
+}
