@@ -60,7 +60,7 @@ jobs:
     strategy:
       fail-fast: false   # 单个服务失败不影响其他服务
       matrix:
-        service: ["user","gateway","note","feed","interaction"]
+        service: ["user","gateway","note","feed","interaction","rank"]
 
     steps:
       - name: 检出代码
@@ -113,7 +113,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        service: ["user","gateway","note","feed","interaction"]
+        service: ["user","gateway","note","feed","interaction","rank"]
 
     steps:
       - name: 检出代码

@@ -1,0 +1,37 @@
+// proto/rank/rank.proto
+// 排行榜服务 Protobuf 定义。
+// 提供热门笔记排行查询。
+// 生成 Go 桩代码：make proto
+
+syntax = "proto3";
+
+package rank;
+
+option go_package = "xys-clone/proto/rank;rankpb";
+
+// ──────────── 排行榜服务 ────────────
+service RankService {
+  // 获取热门笔记 Top N
+  rpc GetHotNotes(GetHotNotesReq) returns (GetHotNotesResp);
+}
+
+message GetHotNotesReq {
+  int32 count = 1;  // 获取条数，默认 20，最大 100
+}
+
+message RankItem {
+  int64  note_id       = 1;
+  int64  author_id     = 2;
+  string author_name   = 3;
+  string author_avatar = 4;
+  string title         = 5;
+  string content       = 6;
+  repeated string image_urls = 7;
+  repeated string tags       = 8;
+  int64  created_at    = 9;
+  double heat_score    = 10;  // 热度分
+}
+
+message GetHotNotesResp {
+  repeated RankItem items = 1;
+}

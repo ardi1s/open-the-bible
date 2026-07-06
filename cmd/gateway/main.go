@@ -17,6 +17,7 @@ import (
 	feedpb "xys-clone/proto/feed"
 	interactionpb "xys-clone/proto/interaction"
 	notepb "xys-clone/proto/note"
+	rankpb "xys-clone/proto/rank"
 	userpb "xys-clone/proto/user"
 )
 
@@ -32,6 +33,10 @@ func main() {
 	feedConn := mustDial("FEED_SERVICE_ADDR", "localhost:50053")
 	defer feedConn.Close()
 	feedClient := feedpb.NewFeedServiceClient(feedConn)
+
+	rankConn := mustDial("RANK_SERVICE_ADDR", "localhost:50055")
+	defer rankConn.Close()
+	rankClient := rankpb.NewRankServiceClient(rankConn)
 
 	interactionConn := mustDial("INTERACTION_SERVICE_ADDR", "localhost:50054")
 	defer interactionConn.Close()
@@ -223,6 +228,22 @@ func main() {
 			"code": 0,
 			"data": gin.H{"items": resp.Items, "total": resp.Total},
 		})
+	})
+
+	// ──────────── 排行榜 ────────────
+
+	// GET /api/rank/hot?count=20  —  热门笔记 Top N
+	r.GET("/api/rank/hot", func(c *gin.Context) {
+		count, _ := strconv.Atoi(c.DefaultQuery("count", "20"))
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+		defer cancel()
+		resp, err := rankClient.GetHotNotes(ctx, &rankpb.GetHotNotesReq{Count: int32(count)})
+		if err != nil {
+			log.Printf("[error] GetHotNotes 失败: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "error": "获取排行榜失败"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"code": 0, "data": gin.H{"items": resp.Items}})
 	})
 
 	// ──────────── 互动 ────────────

@@ -5,6 +5,7 @@ go 1.25.0
 require (
 	github.com/gin-gonic/gin v1.12.0
 	github.com/redis/go-redis/v9 v9.21.0
+	github.com/robfig/cron/v3 v3.0.1
 	github.com/streadway/amqp v1.1.0
 	google.golang.org/grpc v1.81.1
 	google.golang.org/protobuf v1.36.11
