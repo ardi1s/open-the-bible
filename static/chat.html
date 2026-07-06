@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>小 X 客服</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font:16px -apple-system,BlinkMacSystemFont,sans-serif;background:#f5f5f5;display:flex;justify-content:center;align-items:center;height:100vh}
+.chat{width:420px;max-width:100vw;height:100vh;max-height:700px;background:#fff;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,.1);display:flex;flex-direction:column;overflow:hidden}
+.header{background:linear-gradient(135deg,#ff6b6b,#ee5a24);color:#fff;padding:16px;text-align:center;font-size:18px;font-weight:bold}
+.messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
+.msg{padding:10px 14px;border-radius:18px;max-width:80%;word-break:break-word;line-height:1.6;white-space:pre-wrap}
+.msg.user{align-self:flex-end;background:#ff6b6b;color:#fff}
+.msg.bot{align-self:flex-start;background:#f0f0f0;color:#333}
+.input-area{display:flex;padding:12px;border-top:1px solid #eee;gap:8px}
+.input-area input{flex:1;padding:10px 14px;border:1px solid #ddd;border-radius:24px;outline:none;font-size:15px}
+.input-area button{padding:10px 20px;background:#ff6b6b;color:#fff;border:none;border-radius:24px;cursor:pointer;font-size:15px;font-weight:bold}
+.input-area button:active{opacity:.8}
+.typing{color:#999;font-size:13px;padding:0 4px}
+</style>
+</head>
+<body>
+<div class="chat">
+  <div class="header">🤖 小 X 智能客服</div>
+  <div class="messages" id="msgs">
+    <div class="msg bot">👋 你好！我是小 X 智能客服～<br>有什么可以帮你的？</div>
+  </div>
+  <div class="input-area">
+    <input id="input" type="text" placeholder="输入你的问题…" autofocus />
+    <button onclick="send()">发送</button>
+  </div>
+</div>
+
+<script>
+const ws = new WebSocket(`ws://${location.host}/ws/chat`);
+let sessionID = 'sess-' + Date.now();
+
+ws.onopen = () => console.log('WS connected');
+ws.onmessage = e => {
+  try {
+    const msg = JSON.parse(e.data);
+    append('bot', msg.content);
+  } catch {
+    append('bot', e.data);
+  }
+  document.querySelector('.typing')?.remove();
+};
+ws.onclose = () => append('bot', '⚠️ 连接已断开，请刷新页面');
+
+function append(role, text) {
+  const div = document.createElement('div');
+  div.className = 'msg ' + role;
+  div.textContent = text;
+  document.getElementById('msgs').appendChild(div);
+  document.getElementById('msgs').scrollTop = document.getElementById('msgs').scrollHeight;
+}
+
+function send() {
+  const input = document.getElementById('input');
+  const text = input.value.trim();
+  if (!text) return;
+
+  append('user', text);
+  input.value = '';
+
+  // 显示等待
+  const typing = document.createElement('div');
+  typing.className = 'typing';
+  typing.textContent = '小 X 正在思考…';
+  document.getElementById('msgs').appendChild(typing);
+
+  ws.send(JSON.stringify({session_id: sessionID, content: text}));
+}
+
+document.getElementById('input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') send();
+});
+</script>
+</body>
+</html>

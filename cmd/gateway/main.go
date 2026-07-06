@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"net/http"
 	"os"
@@ -11,6 +12,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
@@ -20,6 +22,9 @@ import (
 	notepb "xys-clone/proto/note"
 	rankpb "xys-clone/proto/rank"
 	userpb "xys-clone/proto/user"
+
+	"xys-clone/pkg/llm"
+	"xys-clone/services/support"
 )
 
 func main() {
@@ -48,6 +53,61 @@ func main() {
 	interactionClient := interactionpb.NewInteractionServiceClient(interactionConn)
 
 	r := gin.Default()
+
+	// ── 客服 ──
+	// 初始化 Redis + LLM（失败不影响主流程）
+	supportRdb, _ := support.OpenRedis()
+	llmClient := llm.New()
+	if prompt, err := os.ReadFile("services/support/SYSTEM.md"); err == nil {
+		llmClient.SetSystemPrompt(string(prompt))
+	}
+	chatHandler := support.NewChatHandler(supportRdb, rankClient, llmClient)
+
+	// WebSocket 升级器
+	upgrader := websocket.Upgrader{CheckOrigin: func(r *http.Request) bool { return true }}
+
+	// GET /chat — 聊天测试页面
+	r.GET("/chat", func(c *gin.Context) { c.File("static/chat.html") })
+
+	// WS /ws/chat — WebSocket 聊天
+	r.GET("/ws/chat", func(c *gin.Context) {
+		conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+		if err != nil {
+			log.Printf("[ws] 升级失败: %v", err)
+			return
+		}
+		defer conn.Close()
+
+		log.Println("[ws] 新连接")
+
+		for {
+			_, msgBytes, err := conn.ReadMessage()
+			if err != nil {
+				log.Printf("[ws] 连接断开: %v", err)
+				return
+			}
+
+			var req struct {
+				SessionID string `json:"session_id"`
+				Content   string `json:"content"`
+			}
+			if err := json.Unmarshal(msgBytes, &req); err != nil || req.Content == "" {
+				continue
+			}
+			if req.SessionID == "" {
+				req.SessionID = "default"
+			}
+
+			log.Printf("[ws] session=%s msg=%s", req.SessionID, req.Content)
+			reply := chatHandler.Reply(req.SessionID, req.Content)
+
+			resp, _ := json.Marshal(map[string]string{"content": reply})
+			if err := conn.WriteMessage(websocket.TextMessage, resp); err != nil {
+				log.Printf("[ws] 发送失败: %v", err)
+				return
+			}
+		}
+	})
 
 	// ──────────── 基础 ────────────
 

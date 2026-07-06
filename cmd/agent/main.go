@@ -7,6 +7,7 @@ package main
 import (
 	"log"
 	"net"
+	"os"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
@@ -42,7 +43,12 @@ func main() {
 
 	llmClient := llm.New()
 	if llmClient.Enabled() {
-		log.Println("LLM（大模型）已配置，GetSuggestions 将使用 AI 生成建议")
+		if prompt, err := os.ReadFile("services/agent/SYSTEM.md"); err == nil {
+			llmClient.SetSystemPrompt(string(prompt))
+			log.Println("LLM（大模型）已配置，已加载 services/agent/SYSTEM.md 系统提示词")
+		} else {
+			log.Println("LLM（大模型）已配置（SYSTEM.md 未找到，使用默认提示词）")
+		}
 	} else {
 		log.Println("LLM_API_KEY 未配置，使用规则引擎生成建议")
 	}

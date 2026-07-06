@@ -41,10 +41,11 @@ type responseBody struct {
 
 // Client 封装一次 LLM 调用的配置。
 type Client struct {
-	apiKey  string
-	baseURL string
-	model   string
-	http    *http.Client
+	apiKey       string
+	baseURL      string
+	model        string
+	systemPrompt string
+	http         *http.Client
 }
 
 // New 创建 LLM 客户端。
@@ -76,16 +77,23 @@ func New() *Client {
 // Enabled 返回是否配置了 API Key（即可用）。
 func (c *Client) Enabled() bool { return c.apiKey != "" }
 
+// SetSystemPrompt 设置系统提示词，优先级高于默认。
+func (c *Client) SetSystemPrompt(p string) { c.systemPrompt = p }
+
 // ChatCompletion 发送一次对话请求，返回助手回复文本。
-// 自动注入 "你是一个小红书的运营分析师..." 的 system prompt。
-func (c *Client) ChatCompletion(prompt string) (string, error) {
+// 若已调用 SetSystemPrompt 则使用自定义提示词，否则使用默认。
+func (c *Client) ChatCompletion(userPrompt string) (string, error) {
 	if c.apiKey == "" {
 		return "", fmt.Errorf("LLM_API_KEY 未配置")
 	}
+	sp := c.systemPrompt
+	if sp == "" {
+		sp = SystemDefault
+	}
 
 	messages := []message{
-		{Role: "system", Content: systemPrompt},
-		{Role: "user", Content: prompt},
+		{Role: "system", Content: sp},
+		{Role: "user", Content: userPrompt},
 	}
 
 	body := requestBody{Model: c.model, Messages: messages}
@@ -124,19 +132,8 @@ func (c *Client) ChatCompletion(prompt string) (string, error) {
 	return content, nil
 }
 
-// ──────────── System Prompt ────────────
+// ──────────── 系统提示词 ────────────
 
-const systemPrompt = `你是小红书的运营分析师 Agent，负责根据用户数据生成个性化的运营建议。
+// SystemDefault 默认 system prompt（未指定时使用）。
+const SystemDefault = `你是小红书的智能助手，请用中文简洁友好地回答用户问题。`
 
-输出要求：
-- 用中文，每条建议一行，每条以 emoji 开头
-- 不要客套话，直接给建议
-- 控制在 5 条以内
-- 不要输出 markdown 格式
-
-分析维度：
-1. 图片数量是否充足（≥3 张为佳）
-2. 标签是否热门、是否缺失
-3. 发布频率是否健康（建议每周 2-3 篇）
-4. 内容风格建议
-5. 互动引导技巧`
