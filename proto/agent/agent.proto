@@ -1,6 +1,6 @@
 // proto/agent/agent.proto
 // Agent 分析服务 Protobuf 定义。
-// 提供粉丝增长分析、标签分析、运营建议。
+// 提供粉丝增长分析、标签分析、运营建议、定时发布。
 // 生成 Go 桩代码：make proto
 
 syntax = "proto3";
@@ -15,6 +15,7 @@ service AgentService {
   rpc GetTagAnalytics(GetTagAnalyticsReq)     returns (GetTagAnalyticsResp);
   rpc GetTopTags(GetTopTagsReq)               returns (GetTopTagsResp);
   rpc GetSuggestions(GetSuggestionsReq)       returns (GetSuggestionsResp);
+  rpc CreateScheduledPost(CreateScheduledPostReq) returns (CreateScheduledPostResp);
 }
 
 // ──────────── 粉丝增长 ────────────
@@ -24,8 +25,8 @@ message GetNoteFansGrowthReq {
 }
 
 message FansGrowthPoint {
-  string hour = 1;       // 格式 "2026-07-06T08"（按小时）
-  int64  count = 2;      // 该小时新增粉丝
+  string hour = 1;
+  int64  count = 2;
 }
 
 message GetNoteFansGrowthResp {
@@ -40,15 +41,15 @@ message GetTagAnalyticsReq {
 
 message GetTagAnalyticsResp {
   string tag             = 1;
-  int64  note_count      = 2;  // 使用该标签的笔记数
+  int64  note_count      = 2;
   int64  total_likes     = 3;
   int64  total_collects  = 4;
   int64  total_comments  = 5;
-  double engagement_rate = 6;  // 互动率 = (likes+collects+comments) / note_count
+  double engagement_rate = 6;
 }
 
 message GetTopTagsReq {
-  int32 limit = 1;  // 默认 10
+  int32 limit = 1;
 }
 
 message TagSummary {
@@ -68,5 +69,21 @@ message GetSuggestionsReq {
 }
 
 message GetSuggestionsResp {
-  repeated string suggestions = 1;  // 中文建议列表
+  repeated string suggestions = 1;
+}
+
+// ──────────── 定时发布 ────────────
+
+message CreateScheduledPostReq {
+  int64  user_id      = 1;
+  string title        = 2;
+  string content      = 3;
+  repeated string image_urls = 4;
+  repeated string tags       = 5;
+  int64  schedule_time = 6;  // 定时发布时间（Unix 时间戳）
+}
+
+message CreateScheduledPostResp {
+  int64 task_id = 1;
+  string status = 2;  // "scheduled"
 }

@@ -64,6 +64,12 @@ func main() {
 		}
 	}()
 
+	go func() {
+		if err := agentsvc.StartTaskConsumer(svc.ExecuteScheduledTask); err != nil {
+			log.Printf("[warn] RabbitMQ 任务消费者启动失败: %v", err)
+		}
+	}()
+
 	lis, err := net.Listen("tcp", ":50056")
 	if err != nil {
 		log.Fatalf("监听端口失败: %v", err)

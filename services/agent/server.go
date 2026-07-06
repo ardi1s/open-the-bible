@@ -53,12 +53,14 @@ func NewServer(rdb *redis.Client, db *gorm.DB, noteClient notepb.NoteServiceClie
 	// 每小时固化粉丝增长数据
 	s.cron.AddFunc("0 * * * *", s.persistFansGrowth)
 	s.cron.Start()
+	// 每分钟扫描到期任务（兜底 MQ 延迟失败的情况）
+		s.cron.AddFunc("* * * * *", s.runDueTasks)
 	return s
 }
 
 // AutoMigrate 自动建表。
 func (s *Server) AutoMigrate() error {
-	return s.db.AutoMigrate(&NoteFansGrowth{}, &TagAnalytics{})
+	return s.db.AutoMigrate(&NoteFansGrowth{}, &TagAnalytics{}, &AgentTask{})
 }
 
 // ──────────── 事件处理 ────────────
@@ -535,6 +537,112 @@ func (s *Server) ruleSuggestions(st userStats) []string {
 		tips = tips[:8]
 	}
 	return tips
+}
+
+// ──────────── gRPC：定时发布 ────────────
+
+// CreateScheduledPost 创建定时发布任务，存入 MySQL 并发送到 RabbitMQ 延迟队列。
+func (s *Server) CreateScheduledPost(ctx context.Context, req *agentpb.CreateScheduledPostReq) (*agentpb.CreateScheduledPostResp, error) {
+	now := time.Now().Unix()
+	delay := req.ScheduleTime - now
+	if delay <= 0 {
+		return nil, fmt.Errorf("发布时间必须在未来")
+	}
+
+	task := &AgentTask{
+		UserID:       req.UserId,
+		TaskType:     "scheduled_post",
+		Status:       "pending",
+		Title:        req.Title,
+		Content:      req.Content,
+		ImageURLs:    strings.Join(req.ImageUrls, ","),
+		Tags:         strings.Join(req.Tags, ","),
+		ScheduleTime: req.ScheduleTime,
+		CreatedAt:    now,
+	}
+
+	if err := s.db.WithContext(ctx).Create(task).Error; err != nil {
+		return nil, fmt.Errorf("创建定时任务失败: %w", err)
+	}
+
+	// 发布到 RabbitMQ 延迟交换器
+	if err := publishDelayedTask(task.ID, delay); err != nil {
+		log.Printf("[schedule] RabbitMQ 发布失败: %v，任务仍会在 cron 兜底执行", err)
+	}
+
+	log.Printf("[schedule] 定时任务已创建 task=%d user=%d delay=%ds time=%s",
+		task.ID, req.UserId, delay, time.Unix(req.ScheduleTime, 0).Format("15:04:05"))
+
+	return &agentpb.CreateScheduledPostResp{
+		TaskId: task.ID,
+		Status: "scheduled",
+	}, nil
+}
+
+// ExecuteScheduledTask 对外暴露的任务执行方法（供 consumer 回调）。
+func (s *Server) ExecuteScheduledTask(taskID int64) { s.executePost(taskID) }
+
+// executePost 执行定时发布：调用 NoteService CreateNote。
+func (s *Server) executePost(taskID int64) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	var task AgentTask
+	if err := s.db.First(&task, taskID).Error; err != nil {
+		log.Printf("[schedule] task=%d 查询失败: %v", taskID, err)
+		return
+	}
+	if task.Status != "pending" {
+		return
+	}
+
+	// 调用笔记服务创建笔记
+	noteResp, err := s.noteClient.CreateNote(ctx, &notepb.CreateNoteReq{
+		UserId:    task.UserID,
+		Title:     task.Title,
+		Content:   task.Content,
+		ImageUrls: splitStrings(task.ImageURLs),
+		Tags:      splitStrings(task.Tags),
+	})
+	if err != nil {
+		log.Printf("[schedule] task=%d 发布失败: %v", taskID, err)
+		s.db.Model(&task).Updates(map[string]interface{}{
+			"status": "failed", "executed_at": time.Now().Unix(),
+		})
+		return
+	}
+
+	// 更新任务状态
+	s.db.Model(&task).Updates(map[string]interface{}{
+		"status": "done", "executed_at": time.Now().Unix(), "note_id": noteResp.NoteId,
+	})
+	log.Printf("[schedule] task=%d 定时发布成功 → note_id=%d", taskID, noteResp.NoteId)
+
+}
+
+// runDueTasks cron 兜底：扫描到时间但尚未执行的任务。
+func (s *Server) runDueTasks() {
+	now := time.Now().Unix()
+	var tasks []AgentTask
+	s.db.Where("status = 'pending' AND schedule_time <= ?", now).Limit(10).Find(&tasks)
+	for _, t := range tasks {
+		s.executePost(t.ID)
+	}
+}
+
+func splitStrings(s string) []string {
+	if s == "" {
+		return nil
+	}
+	parts := strings.Split(s, ",")
+	var r []string
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if p != "" {
+			r = append(r, p)
+		}
+	}
+	return r
 }
 
 // ──────────── gRPC 客户端 ────────────
