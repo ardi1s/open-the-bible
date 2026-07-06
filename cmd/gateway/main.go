@@ -14,6 +14,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
+	agentpb "xys-clone/proto/agent"
 	feedpb "xys-clone/proto/feed"
 	interactionpb "xys-clone/proto/interaction"
 	notepb "xys-clone/proto/note"
@@ -37,6 +38,10 @@ func main() {
 	rankConn := mustDial("RANK_SERVICE_ADDR", "localhost:50055")
 	defer rankConn.Close()
 	rankClient := rankpb.NewRankServiceClient(rankConn)
+
+	agentConn := mustDial("AGENT_SERVICE_ADDR", "localhost:50056")
+	defer agentConn.Close()
+	agentClient := agentpb.NewAgentServiceClient(agentConn)
 
 	interactionConn := mustDial("INTERACTION_SERVICE_ADDR", "localhost:50054")
 	defer interactionConn.Close()
@@ -402,6 +407,56 @@ func main() {
 			"is_collected":  resp.IsCollected,
 			"comments":      resp.Comments,
 		}})
+	})
+
+	// ──────────── Agent 分析 ────────────
+
+	r.GET("/api/agent/note/:id/growth", func(c *gin.Context) {
+		noteID := mustParseInt(c.Param("id"))
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+		defer cancel()
+		resp, err := agentClient.GetNoteFansGrowth(ctx, &agentpb.GetNoteFansGrowthReq{NoteId: noteID})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"code": 0, "data": gin.H{"points": resp.Points}})
+	})
+
+	r.GET("/api/agent/tag/analytics", func(c *gin.Context) {
+		tag := c.Query("tag")
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+		defer cancel()
+		resp, err := agentClient.GetTagAnalytics(ctx, &agentpb.GetTagAnalyticsReq{Tag: tag})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"code": 0, "data": resp})
+	})
+
+	r.GET("/api/agent/top-tags", func(c *gin.Context) {
+		limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+		defer cancel()
+		resp, err := agentClient.GetTopTags(ctx, &agentpb.GetTopTagsReq{Limit: int32(limit)})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"code": 0, "data": gin.H{"tags": resp.Tags}})
+	})
+
+	r.GET("/api/agent/suggestions", func(c *gin.Context) {
+		userID := mustParseInt(c.Query("user_id"))
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+		defer cancel()
+		resp, err := agentClient.GetSuggestions(ctx, &agentpb.GetSuggestionsReq{UserId: userID})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"code": 0, "data": gin.H{"suggestions": resp.Suggestions}})
 	})
 
 	// ──────────── 笔记 ────────────

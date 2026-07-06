@@ -1,0 +1,72 @@
+// proto/agent/agent.proto
+// Agent 分析服务 Protobuf 定义。
+// 提供粉丝增长分析、标签分析、运营建议。
+// 生成 Go 桩代码：make proto
+
+syntax = "proto3";
+
+package agent;
+
+option go_package = "xys-clone/proto/agent;agentpb";
+
+// ──────────── Agent 服务 ────────────
+service AgentService {
+  rpc GetNoteFansGrowth(GetNoteFansGrowthReq) returns (GetNoteFansGrowthResp);
+  rpc GetTagAnalytics(GetTagAnalyticsReq)     returns (GetTagAnalyticsResp);
+  rpc GetTopTags(GetTopTagsReq)               returns (GetTopTagsResp);
+  rpc GetSuggestions(GetSuggestionsReq)       returns (GetSuggestionsResp);
+}
+
+// ──────────── 粉丝增长 ────────────
+
+message GetNoteFansGrowthReq {
+  int64 note_id = 1;
+}
+
+message FansGrowthPoint {
+  string hour = 1;       // 格式 "2026-07-06T08"（按小时）
+  int64  count = 2;      // 该小时新增粉丝
+}
+
+message GetNoteFansGrowthResp {
+  repeated FansGrowthPoint points = 1;
+}
+
+// ──────────── 标签分析 ────────────
+
+message GetTagAnalyticsReq {
+  string tag = 1;
+}
+
+message GetTagAnalyticsResp {
+  string tag             = 1;
+  int64  note_count      = 2;  // 使用该标签的笔记数
+  int64  total_likes     = 3;
+  int64  total_collects  = 4;
+  int64  total_comments  = 5;
+  double engagement_rate = 6;  // 互动率 = (likes+collects+comments) / note_count
+}
+
+message GetTopTagsReq {
+  int32 limit = 1;  // 默认 10
+}
+
+message TagSummary {
+  string tag             = 1;
+  int64  note_count      = 2;
+  double engagement_rate = 3;
+}
+
+message GetTopTagsResp {
+  repeated TagSummary tags = 1;
+}
+
+// ──────────── 运营建议 ────────────
+
+message GetSuggestionsReq {
+  int64 user_id = 1;
+}
+
+message GetSuggestionsResp {
+  repeated string suggestions = 1;  // 中文建议列表
+}

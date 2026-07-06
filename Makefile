@@ -1,10 +1,10 @@
 .PHONY: proto proto-user proto-note proto-clean \
-        run-user run-gateway run-note run-feed run-interaction run-rank \
-        build-user build-gateway build-note build-feed build-interaction build-rank build-all \
+        run-user run-gateway run-note run-feed run-interaction run-rank run-agent \
+        build-user build-gateway build-note build-feed build-interaction build-rank build-agent build-all \
         test test-cover lint ci-check \
         docker-build docker-build-all docker-push docker-push-all \
         docker-up docker-down \
-        docker-build-user docker-build-gateway docker-build-note docker-build-feed docker-build-interaction docker-build-rank
+        docker-build-user docker-build-gateway docker-build-note docker-build-feed docker-build-interaction docker-build-rank docker-build-agent
 
 # 自动探测 GOPATH，确保 protoc 插件在 PATH 中
 GOPATH    := $(shell go env GOPATH)
@@ -17,7 +17,7 @@ OUT_DIR   := proto
 # ★ 服务清单 —— 新增服务只需在此加一行
 #   CI/CD 工作流中的 SERVICES 对应更新
 # ============================================================
-SERVICES  := user gateway note feed interaction rank
+SERVICES  := user gateway note feed interaction rank agent
 
 REGISTRY  ?= docker.io
 DOCKER_USERNAME ?=
@@ -34,7 +34,7 @@ install-tools:
 # ============================================================
 # Proto 桩代码
 # ============================================================
-proto: proto-user proto-note proto-feed proto-interaction proto-rank
+proto: proto-user proto-note proto-feed proto-interaction proto-rank proto-agent
 
 proto-user:
 	protoc \
@@ -81,12 +81,22 @@ proto-rank:
 		--go-grpc_opt=paths=source_relative \
 		$(PROTO_DIR)/rank/rank.proto
 
+proto-agent:
+	protoc \
+		--proto_path=$(PROTO_DIR) \
+		--go_out=$(OUT_DIR) \
+		--go_opt=paths=source_relative \
+		--go-grpc_out=$(OUT_DIR) \
+		--go-grpc_opt=paths=source_relative \
+		$(PROTO_DIR)/agent/agent.proto
+
 proto-clean:
 	rm -f $(PROTO_DIR)/user/*.pb.go
 	rm -f $(PROTO_DIR)/note/*.pb.go
 	rm -f $(PROTO_DIR)/feed/*.pb.go
 	rm -f $(PROTO_DIR)/interaction/*.pb.go
 	rm -f $(PROTO_DIR)/rank/*.pb.go
+	rm -f $(PROTO_DIR)/agent/*.pb.go
 
 # ============================================================
 # 运行
@@ -109,6 +119,9 @@ run-interaction:
 run-rank:
 	go run ./cmd/rank/main.go
 
+run-agent:
+	go run ./cmd/agent/main.go
+
 # ============================================================
 # 编译
 # ============================================================
@@ -129,6 +142,9 @@ build-interaction:
 
 build-rank:
 	go build -o bin/rank ./cmd/rank
+
+build-agent:
+	go build -o bin/agent ./cmd/agent
 
 build-all:
 	@for svc in $(SERVICES); do \
