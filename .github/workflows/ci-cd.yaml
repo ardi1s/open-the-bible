@@ -60,7 +60,7 @@ jobs:
     strategy:
       fail-fast: false   # 单个服务失败不影响其他服务
       matrix:
-        service: ["user","gateway","note","feed","interaction","rank","agent"]
+        service: ["user","gateway","note","feed","interaction","rank","agent","frontend"]
 
     steps:
       - name: 检出代码
@@ -84,12 +84,14 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: 构建 ${{ matrix.service }} 镜像
-        run: >
-          docker build
-          -t ${{ steps.meta.outputs.tag_sha }}
-          -t ${{ steps.meta.outputs.tag_latest }}
-          -f cmd/${{ matrix.service }}/Dockerfile
-          .
+        run: |
+          DOCKERFILE="cmd/${{ matrix.service }}/Dockerfile"
+          if [ ! -f "$DOCKERFILE" ]; then DOCKERFILE="frontend/Dockerfile"; fi
+          docker build \
+            -t ${{ steps.meta.outputs.tag_sha }} \
+            -t ${{ steps.meta.outputs.tag_latest }} \
+            -f "$DOCKERFILE" \
+            .
 
       - name: 推送 ${{ matrix.service }} 镜像
         run: |
@@ -113,7 +115,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        service: ["user","gateway","note","feed","interaction","rank","agent"]
+        service: ["user","gateway","note","feed","interaction","rank","agent","frontend"]
 
     steps:
       - name: 检出代码

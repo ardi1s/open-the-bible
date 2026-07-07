@@ -76,6 +76,28 @@ func (s *Server) GetNoteDetail(ctx context.Context, req *notepb.GetNoteDetailReq
 	}, nil
 }
 
+
+// ListUserNotes 查询某用户发布的所有笔记（分页）。
+func (s *Server) ListUserNotes(ctx context.Context, req *notepb.ListUserNotesReq) (*notepb.ListUserNotesResp, error) {
+	page, size := int(req.Page), int(req.PageSize)
+	if page <= 0 { page = 1 }
+	if size <= 0 || size > 50 { size = 20 }
+
+	var total int64
+	var notes []Note
+	s.db.WithContext(ctx).Model(&Note{}).Where("user_id = ?", req.UserId).Count(&total)
+	s.db.WithContext(ctx).Where("user_id = ?", req.UserId).Order("created_at DESC").Offset((page-1)*size).Limit(size).Find(&notes)
+
+	resp := &notepb.ListUserNotesResp{Total: total}
+	for _, n := range notes {
+		resp.Notes = append(resp.Notes, &notepb.NoteResponse{
+			Id: n.ID, UserId: n.UserID, Title: n.Title, Content: n.Content,
+			ImageUrls: splitNonEmpty(n.ImageURLs), Tags: splitNonEmpty(n.Tags), CreatedAt: n.CreatedAt,
+		})
+	}
+	return resp, nil
+}
+
 // publishEvent 异步向 RabbitMQ 发布笔记创建事件。
 func (s *Server) publishEvent(noteID, userID int64) {
 	if s.mq == nil {

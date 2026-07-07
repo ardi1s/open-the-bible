@@ -282,6 +282,118 @@ func (x *NoteResponse) GetCreatedAt() int64 {
 	return 0
 }
 
+type ListUserNotesReq struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        int64                  `protobuf:"varint,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	Page          int32                  `protobuf:"varint,2,opt,name=page,proto3" json:"page,omitempty"`
+	PageSize      int32                  `protobuf:"varint,3,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListUserNotesReq) Reset() {
+	*x = ListUserNotesReq{}
+	mi := &file_note_note_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListUserNotesReq) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListUserNotesReq) ProtoMessage() {}
+
+func (x *ListUserNotesReq) ProtoReflect() protoreflect.Message {
+	mi := &file_note_note_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListUserNotesReq.ProtoReflect.Descriptor instead.
+func (*ListUserNotesReq) Descriptor() ([]byte, []int) {
+	return file_note_note_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *ListUserNotesReq) GetUserId() int64 {
+	if x != nil {
+		return x.UserId
+	}
+	return 0
+}
+
+func (x *ListUserNotesReq) GetPage() int32 {
+	if x != nil {
+		return x.Page
+	}
+	return 0
+}
+
+func (x *ListUserNotesReq) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+type ListUserNotesResp struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Notes         []*NoteResponse        `protobuf:"bytes,1,rep,name=notes,proto3" json:"notes,omitempty"`
+	Total         int64                  `protobuf:"varint,2,opt,name=total,proto3" json:"total,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListUserNotesResp) Reset() {
+	*x = ListUserNotesResp{}
+	mi := &file_note_note_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListUserNotesResp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListUserNotesResp) ProtoMessage() {}
+
+func (x *ListUserNotesResp) ProtoReflect() protoreflect.Message {
+	mi := &file_note_note_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListUserNotesResp.ProtoReflect.Descriptor instead.
+func (*ListUserNotesResp) Descriptor() ([]byte, []int) {
+	return file_note_note_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *ListUserNotesResp) GetNotes() []*NoteResponse {
+	if x != nil {
+		return x.Notes
+	}
+	return nil
+}
+
+func (x *ListUserNotesResp) GetTotal() int64 {
+	if x != nil {
+		return x.Total
+	}
+	return 0
+}
+
 var File_note_note_proto protoreflect.FileDescriptor
 
 const file_note_note_proto_rawDesc = "" +
@@ -307,11 +419,19 @@ const file_note_note_proto_rawDesc = "" +
 	"image_urls\x18\x05 \x03(\tR\timageUrls\x12\x12\n" +
 	"\x04tags\x18\x06 \x03(\tR\x04tags\x12\x1d\n" +
 	"\n" +
-	"created_at\x18\a \x01(\x03R\tcreatedAt2\x83\x01\n" +
+	"created_at\x18\a \x01(\x03R\tcreatedAt\"\\\n" +
+	"\x10ListUserNotesReq\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\x03R\x06userId\x12\x12\n" +
+	"\x04page\x18\x02 \x01(\x05R\x04page\x12\x1b\n" +
+	"\tpage_size\x18\x03 \x01(\x05R\bpageSize\"S\n" +
+	"\x11ListUserNotesResp\x12(\n" +
+	"\x05notes\x18\x01 \x03(\v2\x12.note.NoteResponseR\x05notes\x12\x14\n" +
+	"\x05total\x18\x02 \x01(\x03R\x05total2\xc5\x01\n" +
 	"\vNoteService\x127\n" +
 	"\n" +
 	"CreateNote\x12\x13.note.CreateNoteReq\x1a\x14.note.CreateNoteResp\x12;\n" +
-	"\rGetNoteDetail\x12\x16.note.GetNoteDetailReq\x1a\x12.note.NoteResponseB\x1dZ\x1bxys-clone/proto/note;notepbb\x06proto3"
+	"\rGetNoteDetail\x12\x16.note.GetNoteDetailReq\x1a\x12.note.NoteResponse\x12@\n" +
+	"\rListUserNotes\x12\x16.note.ListUserNotesReq\x1a\x17.note.ListUserNotesRespB\x1dZ\x1bxys-clone/proto/note;notepbb\x06proto3"
 
 var (
 	file_note_note_proto_rawDescOnce sync.Once
@@ -325,23 +445,28 @@ func file_note_note_proto_rawDescGZIP() []byte {
 	return file_note_note_proto_rawDescData
 }
 
-var file_note_note_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_note_note_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_note_note_proto_goTypes = []any{
-	(*CreateNoteReq)(nil),    // 0: note.CreateNoteReq
-	(*CreateNoteResp)(nil),   // 1: note.CreateNoteResp
-	(*GetNoteDetailReq)(nil), // 2: note.GetNoteDetailReq
-	(*NoteResponse)(nil),     // 3: note.NoteResponse
+	(*CreateNoteReq)(nil),     // 0: note.CreateNoteReq
+	(*CreateNoteResp)(nil),    // 1: note.CreateNoteResp
+	(*GetNoteDetailReq)(nil),  // 2: note.GetNoteDetailReq
+	(*NoteResponse)(nil),      // 3: note.NoteResponse
+	(*ListUserNotesReq)(nil),  // 4: note.ListUserNotesReq
+	(*ListUserNotesResp)(nil), // 5: note.ListUserNotesResp
 }
 var file_note_note_proto_depIdxs = []int32{
-	0, // 0: note.NoteService.CreateNote:input_type -> note.CreateNoteReq
-	2, // 1: note.NoteService.GetNoteDetail:input_type -> note.GetNoteDetailReq
-	1, // 2: note.NoteService.CreateNote:output_type -> note.CreateNoteResp
-	3, // 3: note.NoteService.GetNoteDetail:output_type -> note.NoteResponse
-	2, // [2:4] is the sub-list for method output_type
-	0, // [0:2] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	3, // 0: note.ListUserNotesResp.notes:type_name -> note.NoteResponse
+	0, // 1: note.NoteService.CreateNote:input_type -> note.CreateNoteReq
+	2, // 2: note.NoteService.GetNoteDetail:input_type -> note.GetNoteDetailReq
+	4, // 3: note.NoteService.ListUserNotes:input_type -> note.ListUserNotesReq
+	1, // 4: note.NoteService.CreateNote:output_type -> note.CreateNoteResp
+	3, // 5: note.NoteService.GetNoteDetail:output_type -> note.NoteResponse
+	5, // 6: note.NoteService.ListUserNotes:output_type -> note.ListUserNotesResp
+	4, // [4:7] is the sub-list for method output_type
+	1, // [1:4] is the sub-list for method input_type
+	1, // [1:1] is the sub-list for extension type_name
+	1, // [1:1] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_note_note_proto_init() }
@@ -355,7 +480,7 @@ func file_note_note_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_note_note_proto_rawDesc), len(file_note_note_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

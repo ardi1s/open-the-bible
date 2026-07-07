@@ -5,6 +5,13 @@ bin/
 *.dll
 *.so
 *.dylib
+/gateway
+/user
+/note
+/feed
+/interaction
+/rank
+/agent
 
 # Test binary
 *.test
@@ -25,3 +32,8 @@ go.work
 # Env
 .env
 .env.*
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+.vite/

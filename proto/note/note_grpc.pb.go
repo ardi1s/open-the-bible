@@ -26,6 +26,7 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	NoteService_CreateNote_FullMethodName    = "/note.NoteService/CreateNote"
 	NoteService_GetNoteDetail_FullMethodName = "/note.NoteService/GetNoteDetail"
+	NoteService_ListUserNotes_FullMethodName = "/note.NoteService/ListUserNotes"
 )
 
 // NoteServiceClient is the client API for NoteService service.
@@ -38,6 +39,8 @@ type NoteServiceClient interface {
 	CreateNote(ctx context.Context, in *CreateNoteReq, opts ...grpc.CallOption) (*CreateNoteResp, error)
 	// 查询笔记详情
 	GetNoteDetail(ctx context.Context, in *GetNoteDetailReq, opts ...grpc.CallOption) (*NoteResponse, error)
+	// 查询某用户的所有笔记
+	ListUserNotes(ctx context.Context, in *ListUserNotesReq, opts ...grpc.CallOption) (*ListUserNotesResp, error)
 }
 
 type noteServiceClient struct {
@@ -68,6 +71,16 @@ func (c *noteServiceClient) GetNoteDetail(ctx context.Context, in *GetNoteDetail
 	return out, nil
 }
 
+func (c *noteServiceClient) ListUserNotes(ctx context.Context, in *ListUserNotesReq, opts ...grpc.CallOption) (*ListUserNotesResp, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListUserNotesResp)
+	err := c.cc.Invoke(ctx, NoteService_ListUserNotes_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // NoteServiceServer is the server API for NoteService service.
 // All implementations must embed UnimplementedNoteServiceServer
 // for forward compatibility.
@@ -78,6 +91,8 @@ type NoteServiceServer interface {
 	CreateNote(context.Context, *CreateNoteReq) (*CreateNoteResp, error)
 	// 查询笔记详情
 	GetNoteDetail(context.Context, *GetNoteDetailReq) (*NoteResponse, error)
+	// 查询某用户的所有笔记
+	ListUserNotes(context.Context, *ListUserNotesReq) (*ListUserNotesResp, error)
 	mustEmbedUnimplementedNoteServiceServer()
 }
 
@@ -93,6 +108,9 @@ func (UnimplementedNoteServiceServer) CreateNote(context.Context, *CreateNoteReq
 }
 func (UnimplementedNoteServiceServer) GetNoteDetail(context.Context, *GetNoteDetailReq) (*NoteResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetNoteDetail not implemented")
+}
+func (UnimplementedNoteServiceServer) ListUserNotes(context.Context, *ListUserNotesReq) (*ListUserNotesResp, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListUserNotes not implemented")
 }
 func (UnimplementedNoteServiceServer) mustEmbedUnimplementedNoteServiceServer() {}
 func (UnimplementedNoteServiceServer) testEmbeddedByValue()                     {}
@@ -151,6 +169,24 @@ func _NoteService_GetNoteDetail_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _NoteService_ListUserNotes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListUserNotesReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(NoteServiceServer).ListUserNotes(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: NoteService_ListUserNotes_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(NoteServiceServer).ListUserNotes(ctx, req.(*ListUserNotesReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // NoteService_ServiceDesc is the grpc.ServiceDesc for NoteService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -165,6 +201,10 @@ var NoteService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetNoteDetail",
 			Handler:    _NoteService_GetNoteDetail_Handler,
+		},
+		{
+			MethodName: "ListUserNotes",
+			Handler:    _NoteService_ListUserNotes_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

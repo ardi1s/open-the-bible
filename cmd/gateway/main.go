@@ -579,6 +579,35 @@ func main() {
 		c.JSON(http.StatusOK, gin.H{"code": 0, "data": gin.H{"note_id": resp.NoteId}})
 	})
 
+	// GET /api/notes/:id  —  笔记详情
+	r.GET("/api/notes/:id", func(c *gin.Context) {
+		noteID := mustParseInt(c.Param("id"))
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+		defer cancel()
+		resp, err := noteClient.GetNoteDetail(ctx, &notepb.GetNoteDetailReq{NoteId: noteID})
+		if err != nil {
+			log.Printf("[error] GetNoteDetail(%d) 失败: %v", noteID, err)
+			c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"code": 0, "data": resp})
+	})
+
+	// GET /api/user/:id/notes  —  某用户发布的笔记列表（供个人主页使用）
+	r.GET("/api/user/:id/notes", func(c *gin.Context) {
+		userID := mustParseInt(c.Param("id"))
+		page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+		size, _ := strconv.Atoi(c.DefaultQuery("size", "20"))
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+		defer cancel()
+		resp, err := noteClient.ListUserNotes(ctx, &notepb.ListUserNotesReq{UserId: userID, Page: int32(page), PageSize: int32(size)})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"code": 0, "data": resp})
+	})
+
 	log.Println("Gateway 已启动，监听 :8080")
 	if err := r.Run(":8080"); err != nil {
 		log.Fatalf("Gateway 启动失败: %v", err)
