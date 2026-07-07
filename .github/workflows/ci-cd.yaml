@@ -85,13 +85,18 @@ jobs:
 
       - name: 构建 ${{ matrix.service }} 镜像
         run: |
-          DOCKERFILE="cmd/${{ matrix.service }}/Dockerfile"
-          if [ ! -f "$DOCKERFILE" ]; then DOCKERFILE="frontend/Dockerfile"; fi
-          docker build \
-            -t ${{ steps.meta.outputs.tag_sha }} \
-            -t ${{ steps.meta.outputs.tag_latest }} \
-            -f "$DOCKERFILE" \
-            .
+          if [ "${{ matrix.service }}" = "frontend" ]; then
+            docker build \
+              -t ${{ steps.meta.outputs.tag_sha }} \
+              -t ${{ steps.meta.outputs.tag_latest }} \
+              frontend/
+          else
+            docker build \
+              -t ${{ steps.meta.outputs.tag_sha }} \
+              -t ${{ steps.meta.outputs.tag_latest }} \
+              -f cmd/${{ matrix.service }}/Dockerfile \
+              .
+          fi
 
       - name: 推送 ${{ matrix.service }} 镜像
         run: |
